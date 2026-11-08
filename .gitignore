@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local agent mockups and scratch data
 .superpowers/
+
+# Git worktrees are isolated checkouts and must not be committed into this repository
+.worktrees/

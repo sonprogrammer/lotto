@@ -1,7 +1,12 @@
-# Project Agent Instructions
+# 프로젝트 작업 규칙
 
-- Treat `spec.md` and `architecture.md` as the approved product and technical references. Keep them in sync when an approved requirement changes.
-- Keep lottery statistics and historical simulations deterministic and explainable. A simulated round may use only data that was available before that round; never claim that analysis improves or guarantees winning odds.
-- Enforce the access boundary: signed-out visitors can use only the random six-number preview; account features require Kakao authentication and must stay scoped to the authenticated user.
-- Keep external credentials server-side. Scheduled draw imports and result checks must be safe to retry without duplicating data or notifications.
-- Follow the selected stack in `architecture.md`; add dependencies only when the current stack cannot reasonably meet a documented requirement.
+- 제품 요구사항은 `spec.md`, 기술 구조는 `architecture.md`를 기준으로 합니다. 합의된 내용이 바뀌면 두 문서도 함께 고칩니다.
+- 통계와 과거 시뮬레이션은 같은 입력에 항상 같은 결과를 내야 하며, 시뮬레이션은 해당 회차 전에 공개된 정보만 사용합니다. 분석이 당첨 확률을 높이거나 당첨을 보장한다고 표현하지 않습니다.
+- 로그인하지 않은 사용자는 무작위 번호 6개 미리보기만 사용할 수 있습니다. 그 밖의 계정 기능은 카카오 로그인 후 본인 계정의 데이터만 다룹니다.
+- 비밀 키와 외부 서비스 자격 증명은 서버에만 둡니다. 예약 작업은 재실행돼도 같은 결과나 알림이 중복으로 생기지 않게 합니다.
+- 기술 선택은 `architecture.md`를 따릅니다. 문서에 있는 요구사항을 현재 기술로 해결할 수 없을 때만 새 의존성을 추가합니다.
+- 프로젝트 코드는 FSD(Feature-Sliced Design) 구조를 따릅니다. Next.js 라우트 파일은 얇게 유지하고, 화면과 기능 코드는 `architecture.md`에 정한 FSD 레이어에 둡니다.
+- React 컴포넌트는 원칙적으로 파일 하나에 하나만 둡니다. 여러 컴포넌트를 한 파일에 넣지 말고, 파일을 짧고 역할이 분명하게 나눕니다.
+- 커스텀 훅은 컴포넌트 파일에 섞지 않고 각각 별도 파일에 둡니다. 관련된 기능 폴더에 저장하고 필요한 곳에서 가져와 사용합니다.
+- 컴포넌트, 훅, API 요청, 타입, 유틸리티도 역할에 맞게 분리합니다. 단, 코드 한 줄짜리 파일을 무분별하게 늘리기보다 각 파일이 하나의 분명한 책임을 갖도록 합니다.
+- 커밋 전에는 Husky와 lint-staged가 변경된 파일의 검사와 포맷을 실행합니다. GitHub Actions CI도 포맷, 린트, 타입, 테스트, 빌드를 확인해야 합니다.

@@ -13,8 +13,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "format": "prettier --write \"**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,css}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,css}\""
+    "format": "prettier --write \"**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,css,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,css,md,yml,yaml}\"",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -25,6 +26,9 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@emnapi/core": "^1.11.3",
+    "@emnapi/runtime": "^1.11.3",
+    "@emnapi/wasi-threads": "^1.2.3",
     "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -35,11 +39,20 @@
     "@vitejs/plugin-react": "^6.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "lint-staged": "^16.2.7",
     "postcss": "^8.5.32",
     "prettier": "^3.9.10",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.1.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css}": "prettier --write"
   }
 }

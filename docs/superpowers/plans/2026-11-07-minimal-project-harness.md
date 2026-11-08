@@ -1,89 +1,29 @@
-# Minimal Project Harness Implementation Plan
+# 기본 개발 환경 구성 작업 기록
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+상태: 완료된 과거 작업 기록. 당시에는 Supabase를 선택했지만, 현재는 MongoDB로 바꾸기로 했습니다.
 
-**Goal:** Set up the smallest repeatable local development and quality-check harness for the approved Next.js + Supabase project.
+## 목표
 
-**Architecture:** Scaffold a Next.js App Router project in the existing repository while preserving the approved product documents. Add project scripts, formatting and test-runner configuration, and environment placeholders; leave product features, Supabase database setup, and actual feature tests for later approved work.
+Next.js 프로젝트를 실행하고 코드 검사와 테스트를 할 수 있는 최소 환경을 마련했습니다. 제품 기능이나 실제 데이터베이스는 이 작업에 포함하지 않았습니다.
 
-**Tech Stack:** Node.js 22, npm, Next.js App Router, TypeScript, Tailwind CSS, ESLint, Prettier, Vitest, React Testing Library, Zod.
+## 구성한 항목
 
-**Spec:** `spec.md` and `architecture.md` (approved drafts)
+- Next.js App Router, TypeScript, Tailwind CSS, ESLint
+- npm 명령: 개발 서버, 빌드, 실행, 린트, 타입 검사, 테스트, 포맷
+- Vitest, React Testing Library, jsdom 테스트 환경
+- Zod 입력값 검사 라이브러리
+- Node.js 버전과 환경 변수 예시
+- `AGENTS.md`, `spec.md`, `architecture.md` 보존
 
-## Global Constraints
+## 점검 내용
 
-- Keep signed-out users limited to the random six-number preview; full account features require Kakao authentication.
-- Lottery statistics and simulations must remain deterministic and must not claim improved or guaranteed winning odds.
-- Use the selected stack in `architecture.md`; do not add dependencies without a documented need.
-- Do not create product features in this harness task.
-- Preserve `AGENTS.md`, `spec.md`, and `architecture.md` when scaffolding.
-- Supported Node.js versions must satisfy both Vitest 5 and jsdom 29: Node.js 22.13 or later in the 22.x line, 24.x, or 26 and later. `.nvmrc` selects Node 22 and npm 10 or later is required.
+- Node.js는 22.13 이상인 22.x, 24.x 또는 26 이상을 지원하도록 설정했습니다.
+- `.env.example`에는 실제 비밀 값을 넣지 않았습니다.
+- 포맷, 린트, 타입 검사, 테스트 도구, 프로덕션 빌드를 확인했습니다.
+- 이 작업 당시에는 제품 테스트가 없었습니다.
 
-## Review Focus
+## 당시 구현 선택
 
-- Existing approved Markdown files must survive app scaffolding unchanged; verify their contents and file paths after scaffold.
-- Project scripts must remain separate and callable (`dev`, `build`, `lint`, `typecheck`, `test`, `format:check`); inspect the resulting `package.json` scripts.
-- `.env.example` must contain placeholders only and must not expose credentials; inspect every example value before completion.
-- Vitest configuration must discover future TypeScript and TSX tests with a DOM environment and setup file; inspect the config and script while leaving product tests absent.
-- Node and npm requirements must be explicit and compatible with both Next.js and Vitest; inspect `engines`, `.nvmrc`, and the lockfile metadata.
-
----
-
-### Task 1: Scaffold the approved web runtime
-
-**Files:**
-- Create: `package.json`, `package-lock.json`, `next.config.ts`, `postcss.config.mjs`, `tsconfig.json`, `eslint.config.mjs`
-- Create: `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`
-- Create: `.nvmrc`, `.gitignore`, `README.md`
-- Preserve: `AGENTS.md`, `spec.md`, `architecture.md`
-
-**Interfaces:**
-- Produces: npm scripts `dev`, `build`, `start`, `lint`, `typecheck`, `test`, `format`, `format:check`
-- Produces: Next.js App Router root route and TypeScript path alias `@/*`
-
-- [ ] Create a Next.js App Router scaffold using npm, TypeScript, Tailwind CSS, and ESLint; preserve the three approved Markdown files.
-- [ ] Set `.nvmrc` to `22` and declare the supported Node engine range as `^22.13.0 || ^24.0.0 || >=26.0.0` in `package.json`.
-- [ ] Add separate scripts for development, production build/start, lint, TypeScript checking, Vitest, formatting, and formatting checks.
-- [ ] Document Node/npm prerequisites and the project commands in `README.md`.
-- [ ] Inspect the scaffold and confirm the approved Markdown files remain present and unchanged.
-
-### Task 2: Configure formatting and test tooling
-
-**Files:**
-- Create: `prettier.config.mjs`, `.prettierignore`
-- Create: `vitest.config.mts`, `src/test/setup.ts`
-- Modify: `package.json`, `package-lock.json`
-
-**Interfaces:**
-- Consumes: Task 1's npm scripts and TypeScript configuration
-- Produces: Vitest DOM environment and setup entrypoint for future React component tests
-
-- [ ] Add Prettier configuration compatible with the repository's TypeScript and Next.js files.
-- [ ] Add Vitest with the React plugin, `jsdom`, React Testing Library, `user-event`, and `jest-dom` matchers.
-- [ ] Add the approved Zod runtime dependency for validation in later features; do not add product validation logic in this task.
-- [ ] Configure test discovery for `*.test.ts` and `*.test.tsx`; allow the initial harness to run with no product test files.
-- [ ] Create the test setup module that registers `jest-dom` matchers and testing-library cleanup.
-- [ ] Do not add product behavior tests in this harness-only task.
-
-### Task 3: Add safe environment and setup guidance
-
-**Files:**
-- Create: `.env.example`
-- Modify: `README.md`, `.gitignore`
-
-**Interfaces:**
-- Consumes: Task 1's project scripts and selected Supabase architecture
-- Produces: documented environment-variable placeholders for later Supabase and server-side integration
-
-- [ ] Add placeholders for the Supabase project URL and public client key; document server-only secrets as placeholders only if the scaffold needs them.
-- [ ] Ensure local environment files and generated build/test artifacts are ignored by Git.
-- [ ] Explain that Supabase project setup, migrations, OAuth secrets, AI credentials, and lottery data-source credentials are added when those integrations are selected.
-- [ ] Inspect `.env.example` and `.gitignore` to confirm no real credentials or unrelated local files are included.
-
-## Execution Notes
-
-- Existing Node is `20.8.0`, below the selected dependency range; use Node 22.13+ (22.x), 24.x, or 26+ for the project runtime before installing dependencies.
-- This environment cannot bind the internal port used during Turbopack CSS compilation, even with escalated execution; use Next.js's supported Webpack flags for both development and production build to keep bundlers consistent.
-- Existing npm is `10.1.0`; use npm and commit its lockfile with the project when the user authorizes Git operations.
-- This plan does not add or run product tests. It configures the runner for future features.
-- Supabase local containers and database migrations are deferred until database implementation begins.
+- 프로젝트 생성 도구가 기본으로 제시한 빌드 방식에서 내부 포트 문제가 있어 개발과 빌드에 Webpack을 사용했습니다.
+- Vitest 설정 파일은 ESM 형식과 맞도록 `.mts` 확장자를 사용했습니다.
+- 당시 계획의 Supabase 환경 변수 안내는 현재 MongoDB 전환 요청과 맞지 않습니다. README와 환경 변수 예시는 새 연결 방식이 결정되면 갱신해야 합니다.

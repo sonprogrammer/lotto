@@ -1,68 +1,38 @@
-# Guest Random Number Preview Implementation Plan
+# 로그인 전 무작위 번호 미리보기 작업 계획
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+상태: 완료된 작업 기록
 
-**Goal:** Replace the starter page with a polished signed-out preview that generates six random Lotto 6/45 numbers and reveals them in sequence while the numbers cycle inside stationary balls.
+## 목표
 
-**Architecture:** Generate the combination in the browser using Web Crypto with unbiased rejection sampling, as allowed by the user's earlier instruction that either an API or frontend can provide the guest random numbers. While drawing, cycle temporary numbers inside stationary balls; reveal and freeze each result from first to sixth. Keep the preview isolated from authentication, Supabase, AI, and historical draw data. A small client component owns the draw state and sequential reveal/cycle timers; reduced-motion preferences skip cycling and reveal the complete result immediately.
+로그인하지 않은 사용자가 로또 번호 6개를 무작위로 만들고, 숫자가 공 안에서 바뀌다가 차례로 멈추는 애니메이션을 보게 합니다.
 
-**Tech Stack:** Next.js App Router, React, TypeScript, Tailwind CSS, CSS animations, Vitest, React Testing Library.
+## 구현 내용
 
-**Spec:** `spec.md` sections 4.1 and 5; `architecture.md` section 2.
+- 브라우저에서 안전한 난수 기능(Web Crypto)을 사용해 1~45 숫자 6개를 만듭니다.
+- 숫자는 중복되지 않으며 오름차순으로 정렬합니다.
+- 공은 뒤집지 않습니다. 공 안의 임시 숫자만 바뀌고, 첫 공부터 하나씩 멈춥니다.
+- 사용자가 애니메이션을 줄이도록 설정했다면 기다리지 않고 결과를 보여줍니다.
+- 이 미리보기에서는 로그인, 통계, AI, 저장 데이터에 접근하지 않습니다.
+- 추가 라이브러리는 설치하지 않았습니다.
 
-**Status:** Approved for implementation under the user's prior choice of either browser or API generation.
+## 작업 항목
 
-## Global Constraints
+### 번호 생성
 
-- Generate exactly six distinct integers from 1 through 45.
-- The signed-out preview provides random generation only; do not add statistics, AI, saved combinations, or account data.
-- Cycle visible temporary numbers inside stationary balls, then reveal and freeze the final numbers from first to sixth; follow `prefers-reduced-motion`.
-- Do not claim that random results improve or guarantee winning odds.
-- Do not add dependencies for this slice.
+- [x] 숫자 6개가 서로 다르고, 1~45 범위이며, 정렬되는지 검사
+- [x] 유효하지 않거나 중복된 난수는 건너뛰는지 검사
+- [x] Web Crypto 난수와 중복 없는 조합 생성 구현
 
-## Review Focus
+### 미리보기 화면
 
-- Randomness must avoid modulo bias and duplicate numbers; test rejection and uniqueness.
-- Repeated clicks during a reveal must not replace an in-progress combination; test the disabled action and re-generation after completion.
-- Reduced motion must skip continuous spinning and the sequential wait; test that all numbers appear immediately.
-- The final combination must be announced once to assistive technology; test the completion status.
-- Unrevealed slots must not expose their final numbers early; test before and between reveal steps.
+- [x] 비어 있는 번호 공, 임시 숫자 애니메이션, 순서대로 공개하는 동작 구현
+- [x] 생성 중 연속 클릭 방지와 생성 후 재생성 구현
+- [x] 모션 줄이기 설정 지원 및 화면 읽기 도구 접근성 반영
+- [x] 모바일 대응과 한국어 페이지 정보 적용
+- [x] 포맷, 린트, 타입, 테스트, 프로덕션 빌드 확인
 
----
+## 작업 때 참고한 내용
 
-### Task 1: Add an unbiased Lotto combination generator
-
-**Files:**
-- Create: `src/features/preview/lib/generate-lotto-numbers.ts`
-- Test: `src/features/preview/lib/generate-lotto-numbers.test.ts`
-
-**Interfaces:**
-- Produces: `generateLottoNumbers(randomUint32?: () => number): number[]`
-
-- [x] Write tests proving that six numbers are distinct, sorted, and within 1–45, and that rejected out-of-range samples and duplicates are skipped.
-- [x] Run the tests and confirm they fail because the generator module is missing.
-- [x] Implement Web Crypto-backed rejection sampling and sort the six accepted numbers ascending.
-- [x] Run the generator tests and confirm they pass.
-
-### Task 2: Build the animated guest preview
-
-**Files:**
-- Create: `src/features/preview/components/lotto-number-preview.tsx`
-- Test: `src/features/preview/components/lotto-number-preview.test.tsx`
-- Modify: `src/app/page.tsx`, `src/app/globals.css`, `src/app/layout.tsx`
-
-**Interfaces:**
-- Consumes: `generateLottoNumbers()` from Task 1.
-- Produces: the home page guest preview, six accessible number balls, sequential reveal, and regenerate action.
-
-- [x] Write component tests for the six waiting slots, cycling interim numbers, ordered reveal, prevention of concurrent generation, regeneration, reduced-motion behavior, and a single completion announcement.
-- [x] Run the component tests and confirm they fail because the preview component is missing.
-- [x] Implement the accessible preview client component with one-number-at-a-time reveal and cleanup of pending timers.
-- [x] Replace the starter home page, add responsive styling and reduced-motion CSS, and update Korean page metadata.
-- [x] Run component tests, then all project verification commands: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
-
-## Execution Notes
-
-- This checkout has no `.git` repository, so the approved feature work proceeds in the current project folder as the previous harness work did; there is no Git worktree or commit range.
-- `spec.md` allows browser or API generation. The user previously allowed either; use browser generation to avoid a server round trip for a public random preview.
-- Next.js's generated agent rules are disabled to preserve the requested minimal `AGENTS.md`.
+- 번호를 브라우저에서 만들지 API에서 만들지는 요구사항상 둘 다 가능했습니다. 공개 미리보기이므로 브라우저에서 생성했습니다.
+- 초기 애니메이션은 공이 도는 것으로 잘못 구현되어 수정했습니다. 현재는 공은 고정하고 숫자만 바뀝니다.
+- 작업 당시 Git 저장소가 없어서 현재 폴더에서 작업했습니다. 이 기록은 당시 상황을 적은 것이며 현재 Git 연결 상태를 뜻하지 않습니다.
