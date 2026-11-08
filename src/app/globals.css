@@ -137,6 +137,7 @@ a {
   font: inherit;
   font-size: 12px;
   font-weight: 700;
+  text-decoration: none;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,

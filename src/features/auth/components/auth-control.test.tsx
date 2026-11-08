@@ -2,55 +2,32 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthControl } from "./auth-control";
 
-const {
-  createBrowserClientMock,
-  signInWithOAuthMock,
-  signOutMock,
-  refreshMock,
-} = vi.hoisted(() => ({
-  createBrowserClientMock: vi.fn(),
-  signInWithOAuthMock: vi.fn(),
-  signOutMock: vi.fn(),
+const { fetchMock, refreshMock } = vi.hoisted(() => ({
+  fetchMock: vi.fn(),
   refreshMock: vi.fn(),
-}));
-
-vi.mock("@/lib/supabase/browser", () => ({
-  createSupabaseBrowserClient: createBrowserClientMock,
 }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: refreshMock }),
 }));
 
+vi.stubGlobal("fetch", fetchMock);
+
 describe("AuthControl", () => {
   beforeEach(() => {
-    createBrowserClientMock.mockReset().mockReturnValue({
-      auth: {
-        signInWithOAuth: signInWithOAuthMock,
-        signOut: signOutMock,
-      },
-    });
-    signInWithOAuthMock.mockReset().mockResolvedValue({ error: null });
-    signOutMock.mockReset().mockResolvedValue({ error: null });
+    fetchMock.mockReset().mockResolvedValue({ ok: true });
     refreshMock.mockReset();
   });
 
-  it("starts Kakao OAuth with the app callback when configured", async () => {
+  it("starts Kakao OAuth through a same-origin link", async () => {
     render(<AuthControl isConfigured isSignedIn={false} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "카카오로 로그인" }));
-
-    await waitFor(() => {
-      expect(signInWithOAuthMock).toHaveBeenCalledWith({
-        provider: "kakao",
-        options: {
-          redirectTo: "http://localhost:3000/auth/callback",
-        },
-      });
-    });
+    expect(
+      screen.getByRole("link", { name: "카카오로 로그인" }),
+    ).toHaveAttribute("href", "/api/auth/kakao");
   });
 
-  it("explains that setup is required when Supabase is not configured", async () => {
+  it("explains that setup is required when auth is not configured", async () => {
     render(<AuthControl isConfigured={false} isSignedIn={false} />);
 
     fireEvent.click(screen.getByRole("button", { name: "카카오로 로그인" }));
@@ -58,7 +35,7 @@ describe("AuthControl", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "로그인 설정을 준비 중이에요.",
     );
-    expect(createBrowserClientMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("signs out and refreshes the visible session state", async () => {
@@ -67,13 +44,15 @@ describe("AuthControl", () => {
     fireEvent.click(screen.getByRole("button", { name: "로그아웃" }));
 
     await waitFor(() => {
-      expect(signOutMock).toHaveBeenCalledOnce();
+      expect(fetchMock).toHaveBeenCalledWith("/api/auth/logout", {
+        method: "POST",
+      });
       expect(refreshMock).toHaveBeenCalledOnce();
     });
   });
 
   it("shows a recoverable message when sign-out fails", async () => {
-    signOutMock.mockResolvedValue({ error: new Error("network error") });
+    fetchMock.mockResolvedValue({ ok: false });
     render(<AuthControl isConfigured isSignedIn />);
 
     fireEvent.click(screen.getByRole("button", { name: "로그아웃" }));
