@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { NextRequest } from "next/server";
 import { GET } from "./route";
 
 vi.mock("@/features/auth/server/oauth-state", () => ({
@@ -16,9 +15,7 @@ describe("Kakao login start", () => {
       "KAKAO_REDIRECT_URI",
       "https://lotto.example/api/auth/kakao/callback",
     );
-    const response = GET(
-      new NextRequest("https://lotto.example/api/auth/kakao"),
-    );
+    const response = GET();
     const location = new URL(response.headers.get("location")!);
     expect(location.origin).toBe("https://kauth.kakao.com");
     expect(location.searchParams.get("state")).toBe("state-value");
@@ -31,11 +28,7 @@ describe("Kakao login start", () => {
 
   it("returns to the safe error screen when credentials are missing", () => {
     vi.stubEnv("KAKAO_REST_API_KEY", "");
-    const response = GET(
-      new NextRequest("https://lotto.example/api/auth/kakao"),
-    );
-    expect(response.headers.get("location")).toBe(
-      "https://lotto.example/auth/error?reason=kakao",
-    );
+    const response = GET();
+    expect(response.headers.get("location")).toBe("/auth/error?reason=kakao");
   });
 });

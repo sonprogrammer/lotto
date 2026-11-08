@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getKakaoConfig } from "@/features/auth/server/config";
 import {
   getClearOAuthStateCookieOptions,
   getSessionCookieOptions,
@@ -14,16 +15,18 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const state = params.get("state");
   const cookieState = request.cookies.get(OAUTH_STATE_COOKIE_NAME)?.value;
-  if (!isOAuthStateValid(cookieState, state)) return redirectToError(request);
+  if (!isOAuthStateValid(cookieState, state)) return redirectToError();
 
-  if (params.has("error") || !params.get("code"))
-    return redirectToError(request);
+  if (params.has("error") || !params.get("code")) return redirectToError();
 
   try {
     const kakaoId = await getKakaoUserId(params.get("code")!);
+    const siteOrigin = new URL(getKakaoConfig().redirectUri).origin;
     const { userId } = await findOrCreateKakaoUser(kakaoId);
     const sessionToken = await createAppSession(userId);
-    const response = NextResponse.redirect(new URL("/", request.url));
+    const response = NextResponse.redirect(new URL("/", siteOrigin), {
+      status: 303,
+    });
     response.cookies.set(
       SESSION_COOKIE_NAME,
       sessionToken,
@@ -36,14 +39,15 @@ export async function GET(request: NextRequest) {
     );
     return response;
   } catch {
-    return redirectToError(request);
+    return redirectToError();
   }
 }
 
-function redirectToError(request: NextRequest) {
-  const response = NextResponse.redirect(
-    new URL("/auth/error?reason=kakao", request.url),
-  );
+function redirectToError() {
+  const response = new NextResponse(null, {
+    status: 303,
+    headers: { location: "/auth/error?reason=kakao" },
+  });
   response.cookies.set(
     OAUTH_STATE_COOKIE_NAME,
     "",

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { afterEach } from "vitest";
 import { GET } from "./route";
 
 const mocks = vi.hoisted(() => ({
@@ -21,6 +22,8 @@ vi.mock("@/features/auth/server/session-store", () => ({
   createAppSession: mocks.createAppSession,
 }));
 
+afterEach(() => vi.unstubAllEnvs());
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.isOAuthStateValid.mockReturnValue(true);
@@ -40,6 +43,12 @@ function request(query: string, cookies = "lotto_oauth_state=state-value") {
 
 describe("Kakao callback", () => {
   it("validates state before contacting Kakao, then sets the app session cookie", async () => {
+    vi.stubEnv("KAKAO_REST_API_KEY", "rest-key");
+    vi.stubEnv("KAKAO_CLIENT_SECRET", "client-secret");
+    vi.stubEnv(
+      "KAKAO_REDIRECT_URI",
+      "https://lotto.example/api/auth/kakao/callback",
+    );
     const response = await GET(request("code=auth-code&state=state-value"));
     expect(mocks.isOAuthStateValid).toHaveBeenCalledWith(
       "state-value",
@@ -48,7 +57,7 @@ describe("Kakao callback", () => {
     expect(mocks.getKakaoUserId).toHaveBeenCalledWith("auth-code");
     expect(mocks.findOrCreateKakaoUser).toHaveBeenCalledWith("kakao-user-id");
     expect(mocks.createAppSession).toHaveBeenCalledWith("app-user-id");
-    expect(response.status).toBe(307);
+    expect(response.status).toBe(303);
     expect(response.headers.get("location")).toBe("https://lotto.example/");
     const cookies = response.headers.getSetCookie().join(";");
     expect(cookies).toContain("lotto_session=session-secret");
@@ -56,6 +65,23 @@ describe("Kakao callback", () => {
     expect(cookies).toMatch(/SameSite=lax/i);
     expect(cookies).toContain("Max-Age=2592000");
     expect(cookies).toContain("lotto_oauth_state=;");
+  });
+
+  it("redirects to the configured site origin instead of a supplied Host", async () => {
+    vi.stubEnv("KAKAO_REST_API_KEY", "rest-key");
+    vi.stubEnv("KAKAO_CLIENT_SECRET", "client-secret");
+    vi.stubEnv(
+      "KAKAO_REDIRECT_URI",
+      "https://lotto.example/api/auth/kakao/callback",
+    );
+    const response = await GET(
+      new NextRequest(
+        "https://attacker.example/api/auth/kakao/callback?code=auth-code&state=state-value",
+        { headers: { cookie: "lotto_oauth_state=state-value" } },
+      ),
+    );
+
+    expect(response.headers.get("location")).toBe("https://lotto.example/");
   });
 
   it.each([

@@ -1,23 +1,21 @@
 import { LottoNumberPreview } from "@/features/preview/components/lotto-number-preview";
-import { getSupabaseConfig } from "@/lib/supabase/config";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getKakaoConfig, getMongoConfig } from "@/features/auth/server/config";
+import { getCurrentUser } from "@/features/auth/server/current-session";
 
 export async function AuthAwarePreview() {
-  const isConfigured = Boolean(getSupabaseConfig());
-
-  if (!isConfigured) {
-    return <LottoNumberPreview isConfigured={false} isSignedIn={false} />;
-  }
-
+  let isConfigured = false;
   let isSignedIn = false;
 
   try {
-    const supabase = await createSupabaseServerClient();
-    const { data } = await supabase.auth.getClaims();
-    isSignedIn = Boolean(data?.claims?.sub);
+    getKakaoConfig();
+    getMongoConfig();
+    isConfigured = true;
+    isSignedIn = Boolean(await getCurrentUser());
   } catch {
-    isSignedIn = false;
+    isConfigured = false;
   }
 
-  return <LottoNumberPreview isConfigured isSignedIn={isSignedIn} />;
+  return (
+    <LottoNumberPreview isConfigured={isConfigured} isSignedIn={isSignedIn} />
+  );
 }

@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import {
   getOAuthStateCookieOptions,
   OAUTH_STATE_COOKIE_NAME,
@@ -6,7 +6,7 @@ import {
 import { createKakaoAuthorizationUrl } from "@/features/auth/server/kakao-oauth";
 import { createOAuthState } from "@/features/auth/server/oauth-state";
 
-export function GET(request: NextRequest) {
+export function GET() {
   try {
     const state = createOAuthState();
     const response = NextResponse.redirect(createKakaoAuthorizationUrl(state));
@@ -17,8 +17,9 @@ export function GET(request: NextRequest) {
     );
     return response;
   } catch {
-    return NextResponse.redirect(
-      new URL("/auth/error?reason=kakao", request.url),
-    );
+    return new NextResponse(null, {
+      status: 303,
+      headers: { location: "/auth/error?reason=kakao" },
+    });
   }
 }
