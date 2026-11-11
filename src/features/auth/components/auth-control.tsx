@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAuthControl } from "../hooks/use-auth-control";
 
 type AuthControlProps = {
   isConfigured: boolean;
@@ -9,31 +8,13 @@ type AuthControlProps = {
 };
 
 export function AuthControl({ isConfigured, isSignedIn }: AuthControlProps) {
-  const router = useRouter();
-  const [isPending, setIsPending] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  function explainMissingConfiguration() {
-    setErrorMessage("로그인 설정을 준비 중이에요. 잠시 후 다시 이용해 주세요.");
-  }
-
-  async function handleSignOut() {
-    setErrorMessage("");
-    setIsPending(true);
-
-    try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
-      if (!response.ok) {
-        setErrorMessage("로그아웃을 완료하지 못했어요. 다시 시도해 주세요.");
-        return;
-      }
-      router.refresh();
-    } catch {
-      setErrorMessage("로그아웃을 완료하지 못했어요. 다시 시도해 주세요.");
-    } finally {
-      setIsPending(false);
-    }
-  }
+  const {
+    errorMessage,
+    explainMissingConfiguration,
+    isPending,
+    signOut,
+    startSignIn,
+  } = useAuthControl();
 
   return (
     <div className="auth-control">
@@ -43,19 +24,24 @@ export function AuthControl({ isConfigured, isSignedIn }: AuthControlProps) {
           <button
             className="auth-button auth-button-signed-in"
             type="button"
-            onClick={handleSignOut}
+            onClick={signOut}
             disabled={isPending}
           >
             {isPending ? "로그아웃 중" : "로그아웃"}
           </button>
         </div>
       ) : isConfigured ? (
-        <a className="auth-button auth-button-kakao" href="/api/auth/kakao">
+        <button
+          className="auth-button auth-button-kakao"
+          type="button"
+          onClick={startSignIn}
+          disabled={isPending}
+        >
           <span className="kakao-mark" aria-hidden="true">
             K
           </span>
           카카오로 로그인
-        </a>
+        </button>
       ) : (
         <button
           className="auth-button auth-button-kakao"
