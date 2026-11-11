@@ -10,10 +10,19 @@ export async function POST() {
   }
 
   try {
-    const { drawCount, latestRound } = await syncLotteryDraws();
+    await syncLotteryDraws();
     const draws = await listLotteryDraws();
     const analysis = calculateWeeklyAnalysis(draws);
-    return NextResponse.json({ analysis, drawCount, latestRound });
+    if (analysis.latestRound === null) {
+      throw new Error(
+        "No lottery draw history was available after synchronization",
+      );
+    }
+    return NextResponse.json({
+      analysis,
+      drawCount: analysis.drawCount,
+      latestRound: analysis.latestRound,
+    });
   } catch {
     return NextResponse.json(
       { error: "분석 자료를 가져오지 못했어요." },

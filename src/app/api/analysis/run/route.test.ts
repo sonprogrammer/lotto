@@ -37,6 +37,24 @@ it("syncs real draw data before calculating the analysis", async () => {
   expect(body.analysis.drawCount).toBe(1);
 });
 
+it("reports the round count of the exact data used for the analysis", async () => {
+  syncLotteryDrawsMock.mockResolvedValue({
+    drawCount: 1248,
+    latestRound: 1248,
+  });
+  listLotteryDrawsMock.mockResolvedValue([
+    { roundNumber: 1248, numbers: [2, 11, 16, 25, 34, 35] },
+    { roundNumber: 1249, numbers: [1, 12, 17, 26, 33, 44] },
+  ]);
+
+  const response = await POST();
+  const body = await response.json();
+
+  expect(body.drawCount).toBe(2);
+  expect(body.latestRound).toBe(1249);
+  expect(body.analysis.latestRound).toBe(1249);
+});
+
 it("requires an authenticated user", async () => {
   getCurrentUserMock.mockResolvedValue(null);
 
