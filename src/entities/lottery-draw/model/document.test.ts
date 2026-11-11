@@ -6,6 +6,7 @@ describe("LotteryDrawDocumentSchema", () => {
   const validDocument = {
     _id: new ObjectId(),
     roundNumber: 1162,
+    drawDate: new Date("2025-02-01T00:00:00.000Z"),
     numbers: [5, 10, 16, 23, 35, 44],
     bonusNumber: 7,
     prizesByRank: [
@@ -25,6 +26,7 @@ describe("LotteryDrawDocumentSchema", () => {
 
   it.each([
     { roundNumber: 0 },
+    { drawDate: "2025-02-01" },
     { numbers: [1, 2, 3, 4, 5] },
     { numbers: [1, 2, 3, 4, 5, 5] },
     { numbers: [1, 2, 3, 4, 5, 46] },

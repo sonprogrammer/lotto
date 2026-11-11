@@ -48,6 +48,16 @@ describe("AuthControl", () => {
     expect(screen.queryByText("카카오 로그인됨")).not.toBeInTheDocument();
   });
 
+  it("offers a Kakao profile refresh instead of showing a generic account name", () => {
+    render(<AuthControl isConfigured isSignedIn />);
+
+    expect(screen.getByText("이름 확인 필요")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "카카오 프로필 갱신" }),
+    ).toBeEnabled();
+    expect(screen.queryByText("내 계정")).not.toBeInTheDocument();
+  });
+
   it("signs out and refreshes the visible session state", async () => {
     render(<AuthControl isConfigured isSignedIn />);
 

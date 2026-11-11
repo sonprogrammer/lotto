@@ -1,11 +1,10 @@
-import Link from "next/link";
+"use client";
+
 import { SiteHeader } from "@/widgets/site-header";
-import type { WeeklyAnalysis } from "../lib/calculate-weekly-analysis";
+import { useRunWeeklyAnalysis } from "../hooks/use-run-weekly-analysis";
 
 type AnalysisDashboardProps = {
-  analysis: WeeklyAnalysis | null;
-  displayName: string;
-  state: "ready" | "error";
+  displayName?: string;
 };
 
 function getNumberTone(number: number) {
@@ -16,12 +15,10 @@ function getNumberTone(number: number) {
   return "green";
 }
 
-export function AnalysisDashboard({
-  analysis,
-  displayName,
-  state,
-}: AnalysisDashboardProps) {
-  const hasData = state === "ready" && (analysis?.drawCount ?? 0) > 0;
+export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
+  const analysisRequest = useRunWeeklyAnalysis();
+  const analysisResult = analysisRequest.data;
+  const analysis = analysisResult?.analysis;
 
   return (
     <main className="analysis-shell">
@@ -35,19 +32,51 @@ export function AnalysisDashboard({
           분석은 참고 자료이며 당첨을 예측하거나 보장하지 않아요.
         </p>
 
-        {state === "error" ? (
-          <div className="analysis-empty-state" role="alert">
-            <h2>분석 자료를 불러오지 못했어요.</h2>
-            <p>잠시 후 다시 시도해 주세요.</p>
-            <Link className="analysis-retry-link" href="/analysis">
-              다시 시도
-            </Link>
+        <button
+          className="analysis-run-button"
+          type="button"
+          disabled={analysisRequest.isPending}
+          onClick={() => analysisRequest.mutate()}
+        >
+          {analysisRequest.isPending
+            ? "분석 중"
+            : analysisRequest.isError
+              ? "다시 분석하기"
+              : "분석하기"}
+        </button>
+
+        {analysisRequest.isPending ? (
+          <div
+            className="analysis-loading-state"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <p>
+              전체 회차 자료를 확인하고 있어요. 처음 조회할 때는 잠시 걸릴 수
+              있어요.
+            </p>
+            <div className="analysis-skeleton analysis-skeleton-meta" />
+            <div className="analysis-skeleton analysis-skeleton-card" />
+            <div className="analysis-skeleton-grid">
+              {Array.from({ length: 4 }, (_, index) => (
+                <div
+                  className="analysis-skeleton analysis-skeleton-card"
+                  key={index}
+                />
+              ))}
+            </div>
           </div>
-        ) : hasData && analysis ? (
+        ) : analysisRequest.isError ? (
+          <div className="analysis-empty-state" role="alert">
+            <h2>분석 자료를 가져오지 못했어요.</h2>
+            <p>연결 상태를 확인한 뒤 다시 분석해 주세요.</p>
+          </div>
+        ) : analysis ? (
           <>
             <p className="analysis-meta">
-              전체 공개 회차 · {analysis.drawCount}회 반영 ·{" "}
-              {analysis.latestRound}
+              전체 공개 회차 · {analysisResult?.drawCount ?? analysis.drawCount}
+              회 반영 · {analysisResult?.latestRound ?? analysis.latestRound}
               회차 기준
             </p>
             <section
@@ -177,8 +206,10 @@ export function AnalysisDashboard({
           </>
         ) : (
           <div className="analysis-empty-state" role="status">
-            <h2>아직 분석할 당첨 번호 자료가 없어요.</h2>
-            <p>회차 자료가 반영되면 전체 공개 회차 기준 분석을 보여드릴게요.</p>
+            <h2>실제 당첨 내역으로 이번 주 분석을 시작해 보세요.</h2>
+            <p>
+              분석하기를 누르면 공개된 회차 자료를 가져와 통계를 계산합니다.
+            </p>
           </div>
         )}
       </section>

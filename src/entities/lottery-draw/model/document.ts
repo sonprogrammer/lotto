@@ -28,27 +28,47 @@ const DrawPrizeSchema = z.object({
   amountPerWinner: z.number().int().nonnegative(),
 });
 
-export const LotteryDrawDocumentSchema = z
-  .object({
-    _id: z.instanceof(ObjectId),
-    roundNumber: z.number().int().positive(),
-    numbers: LottoNumbersSchema,
-    bonusNumber: LottoNumberSchema,
-    prizesByRank: z.array(DrawPrizeSchema),
-  })
-  .refine((draw) => !draw.numbers.includes(draw.bonusNumber), {
-    message: "Bonus number must not match a winning number",
-    path: ["bonusNumber"],
-  })
-  .refine(
-    (draw) =>
-      new Set(draw.prizesByRank.map(({ rank }) => rank)).size ===
-      draw.prizesByRank.length,
-    {
+const LotteryDrawRecordBaseSchema = z.object({
+  roundNumber: z.number().int().positive(),
+  drawDate: z.date(),
+  numbers: LottoNumbersSchema,
+  bonusNumber: LottoNumberSchema,
+  prizesByRank: z.array(DrawPrizeSchema),
+});
+
+const validateDraw = (
+  draw: {
+    numbers: readonly number[];
+    bonusNumber: number;
+    prizesByRank: Array<{ rank: number }>;
+  },
+  context: z.RefinementCtx,
+) => {
+  if (draw.numbers.includes(draw.bonusNumber)) {
+    context.addIssue({
+      code: "custom",
+      message: "Bonus number must not match a winning number",
+      path: ["bonusNumber"],
+    });
+  }
+  if (
+    new Set(draw.prizesByRank.map(({ rank }) => rank)).size !==
+    draw.prizesByRank.length
+  ) {
+    context.addIssue({
+      code: "custom",
       message: "Prize ranks must be unique",
       path: ["prizesByRank"],
-    },
-  );
+    });
+  }
+};
+
+export const LotteryDrawRecordSchema =
+  LotteryDrawRecordBaseSchema.superRefine(validateDraw);
+
+export const LotteryDrawDocumentSchema = LotteryDrawRecordBaseSchema.extend({
+  _id: z.instanceof(ObjectId),
+}).superRefine(validateDraw);
 
 export const LotteryDrawAnalysisRowSchema = z.object({
   roundNumber: z.number().int().positive(),
@@ -56,6 +76,7 @@ export const LotteryDrawAnalysisRowSchema = z.object({
 });
 
 export type LotteryDrawDocument = z.infer<typeof LotteryDrawDocumentSchema>;
+export type LotteryDrawRecord = z.infer<typeof LotteryDrawRecordSchema>;
 export type LotteryDrawAnalysisRow = z.infer<
   typeof LotteryDrawAnalysisRowSchema
 >;

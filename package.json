@@ -18,7 +18,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "mongodb": "^7.8.0",
+    "@tanstack/react-query": "^5.107.1",
     "mongodb": "^7.8.0",
     "next": "16.4.5",
     "react": "19.3.0",

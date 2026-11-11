@@ -1,7 +1,12 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, expect, it, vi } from "vitest";
 import { calculateWeeklyAnalysis } from "../lib/calculate-weekly-analysis";
 import { AnalysisDashboard } from "./analysis-dashboard";
+
+const fetchMock = vi.fn();
+vi.stubGlobal("fetch", fetchMock);
 
 vi.mock("@/widgets/site-header", () => ({
   SiteHeader: ({ displayName }: { displayName: string }) => (
@@ -9,55 +14,75 @@ vi.mock("@/widgets/site-header", () => ({
   ),
 }));
 
-describe("AnalysisDashboard", () => {
-  it("shows the analysis and signed-in user's nickname", () => {
-    const analysis = calculateWeeklyAnalysis([
-      { roundNumber: 100, numbers: [1, 2, 3, 11, 23, 45] },
-    ]);
+const analysis = calculateWeeklyAnalysis([
+  { roundNumber: 1249, numbers: [2, 11, 16, 25, 34, 35] },
+]);
 
-    render(
-      <AnalysisDashboard
-        analysis={analysis}
-        displayName="손영진"
-        state="ready"
-      />,
-    );
-
-    expect(
-      screen.getByRole("heading", { name: "이번 주 분석" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("손영진")).toBeInTheDocument();
-    expect(screen.getByText(/100회차 기준/)).toBeInTheDocument();
-    expect(
-      screen.getByText("번호별 출현 횟수와 미출현 회차"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("저수 1–22 · 고수 23–45")).toBeInTheDocument();
-    expect(
-      screen.getByText(/당첨을 예측하거나 보장하지 않아요/),
-    ).toBeInTheDocument();
+function renderDashboard() {
+  const queryClient = new QueryClient({
+    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <AnalysisDashboard displayName="손영진" />
+    </QueryClientProvider>,
+  );
+}
 
-  it("shows an empty state when there are no stored draws", () => {
-    render(
-      <AnalysisDashboard
-        analysis={calculateWeeklyAnalysis([])}
-        displayName="손영진"
-        state="ready"
-      />,
-    );
+beforeEach(() => fetchMock.mockReset());
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "아직 분석할 당첨 번호 자료가 없어요.",
-    );
+it("runs analysis only after the user clicks and displays real results", async () => {
+  fetchMock.mockResolvedValue(
+    new Response(
+      JSON.stringify({ analysis, drawCount: 1249, latestRound: 1249 }),
+      { status: 200 },
+    ),
+  );
+  renderDashboard();
+
+  expect(screen.queryByText(/회 반영/)).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "분석하기" }));
+
+  expect(await screen.findByText(/1249회 반영/)).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledWith("/api/analysis/run", {
+    method: "POST",
   });
+});
 
-  it("shows an error state when draw data cannot be loaded", () => {
-    render(
-      <AnalysisDashboard analysis={null} displayName="손영진" state="error" />,
-    );
+it("shows a skeleton and prevents duplicate analysis requests while pending", async () => {
+  let resolveRequest!: (response: Response) => void;
+  fetchMock.mockReturnValue(
+    new Promise<Response>((resolve) => {
+      resolveRequest = resolve;
+    }),
+  );
+  renderDashboard();
+  await userEvent.click(screen.getByRole("button", { name: "분석하기" }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "분석 자료를 불러오지 못했어요.",
-    );
-  });
+  expect(screen.getByRole("status")).toHaveAttribute("aria-busy", "true");
+  expect(screen.getByRole("button", { name: "분석 중" })).toBeDisabled();
+  expect(fetchMock).toHaveBeenCalledOnce();
+
+  resolveRequest(
+    new Response(
+      JSON.stringify({ analysis, drawCount: 1249, latestRound: 1249 }),
+      { status: 200 },
+    ),
+  );
+  expect(await screen.findByText(/1249회 반영/)).toBeInTheDocument();
+});
+
+it("shows a retry action when real draw data cannot be loaded", async () => {
+  fetchMock.mockResolvedValue(
+    new Response(JSON.stringify({ error: "분석 자료를 가져오지 못했어요." }), {
+      status: 502,
+    }),
+  );
+  renderDashboard();
+  await userEvent.click(screen.getByRole("button", { name: "분석하기" }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "분석 자료를 가져오지 못했어요.",
+  );
+  expect(screen.getByRole("button", { name: "다시 분석하기" })).toBeEnabled();
 });
