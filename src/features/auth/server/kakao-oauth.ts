@@ -10,11 +10,14 @@ export function createKakaoAuthorizationUrl(state: string): string {
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", config.restApiKey);
   url.searchParams.set("redirect_uri", config.redirectUri);
+  url.searchParams.set("scope", "profile_nickname");
   url.searchParams.set("state", state);
   return url.toString();
 }
 
-export async function getKakaoUserId(code: string): Promise<string> {
+export async function getKakaoUserProfile(
+  code: string,
+): Promise<{ kakaoId: string; nickname: string }> {
   const config = getKakaoConfig();
   const tokenBody = new URLSearchParams({
     grant_type: "authorization_code",
@@ -42,9 +45,12 @@ export async function getKakaoUserId(code: string): Promise<string> {
   if (!userResponse.ok) throw new Error("Kakao user lookup failed");
 
   const userData: unknown = await userResponse.json();
-  if (!isKakaoUserResponse(userData))
+  if (!isKakaoUserProfileResponse(userData))
     throw new Error("Kakao user response is invalid");
-  return String(userData.id);
+  return {
+    kakaoId: String(userData.id),
+    nickname: userData.kakao_account.profile.nickname.trim(),
+  };
 }
 
 function isKakaoTokenResponse(
@@ -59,12 +65,24 @@ function isKakaoTokenResponse(
   );
 }
 
-function isKakaoUserResponse(value: unknown): value is { id: number | string } {
+function isKakaoUserProfileResponse(value: unknown): value is {
+  id: number | string;
+  kakao_account: { profile: { nickname: string } };
+} {
   return (
     typeof value === "object" &&
     value !== null &&
     "id" in value &&
     (typeof value.id === "number" ||
-      (typeof value.id === "string" && value.id.length > 0))
+      (typeof value.id === "string" && value.id.length > 0)) &&
+    "kakao_account" in value &&
+    typeof value.kakao_account === "object" &&
+    value.kakao_account !== null &&
+    "profile" in value.kakao_account &&
+    typeof value.kakao_account.profile === "object" &&
+    value.kakao_account.profile !== null &&
+    "nickname" in value.kakao_account.profile &&
+    typeof value.kakao_account.profile.nickname === "string" &&
+    value.kakao_account.profile.nickname.trim().length > 0
   );
 }

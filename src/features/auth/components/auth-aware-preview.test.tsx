@@ -48,4 +48,18 @@ describe("AuthAwarePreview", () => {
       isSignedIn: false,
     });
   });
+
+  it("passes the signed-in user's nickname to the preview header", async () => {
+    getCurrentUserMock.mockResolvedValue({
+      userId: "user-1",
+      nickname: "손영진",
+    });
+
+    const element = await AuthAwarePreview();
+
+    expect(element.props).toMatchObject({
+      isSignedIn: true,
+      displayName: "손영진",
+    });
+  });
 });

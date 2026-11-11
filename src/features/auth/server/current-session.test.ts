@@ -1,13 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { cookiesMock, findActiveMock } = vi.hoisted(() => ({
-  cookiesMock: vi.fn(),
-  findActiveMock: vi.fn(),
-}));
+const { cookiesMock, findActiveMock, findKakaoUserByIdMock } = vi.hoisted(
+  () => ({
+    cookiesMock: vi.fn(),
+    findActiveMock: vi.fn(),
+    findKakaoUserByIdMock: vi.fn(),
+  }),
+);
 
 vi.mock("next/headers", () => ({ cookies: cookiesMock }));
 vi.mock("@/features/auth/server/session-store", () => ({
   findActiveAppSession: findActiveMock,
+}));
+vi.mock("@/features/auth/server/user-store", () => ({
+  findKakaoUserById: findKakaoUserByIdMock,
 }));
 
 import { getCurrentUser } from "./current-session";
@@ -18,11 +24,26 @@ describe("getCurrentUser", () => {
       get: vi.fn().mockReturnValue({ value: "valid-session" }),
     });
     findActiveMock.mockReset().mockResolvedValue({ userId: "user-1" });
+    findKakaoUserByIdMock.mockReset().mockResolvedValue({
+      nickname: "손영진",
+    });
   });
 
   it("returns the user from the active app session", async () => {
-    await expect(getCurrentUser()).resolves.toEqual({ userId: "user-1" });
+    await expect(getCurrentUser()).resolves.toEqual({
+      userId: "user-1",
+      nickname: "손영진",
+    });
     expect(findActiveMock).toHaveBeenCalledWith("valid-session");
+    expect(findKakaoUserByIdMock).toHaveBeenCalledWith("user-1");
+  });
+
+  it("provides a fallback for sessions created before nickname storage", async () => {
+    findKakaoUserByIdMock.mockResolvedValue(null);
+    await expect(getCurrentUser()).resolves.toEqual({
+      userId: "user-1",
+      nickname: "내 계정",
+    });
   });
 
   it("returns null when the session cookie is missing", async () => {

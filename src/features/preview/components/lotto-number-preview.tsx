@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { AuthControl } from "@/features/auth/components/auth-control";
+import { SiteHeader } from "@/widgets/site-header/ui/site-header";
 import { generateLottoNumbers } from "../lib/generate-lotto-numbers";
 
 const NUMBER_COUNT = 6;
@@ -10,6 +9,7 @@ const REVEAL_INTERVAL_MS = 500;
 const ROLLING_INTERVAL_MS = 90;
 
 type LottoNumberPreviewProps = {
+  displayName?: string;
   isConfigured?: boolean;
   isSignedIn?: boolean;
 };
@@ -23,6 +23,7 @@ function getBallColor(number: number | undefined) {
 }
 
 export function LottoNumberPreview({
+  displayName,
   isConfigured = false,
   isSignedIn = false,
 }: LottoNumberPreviewProps) {
@@ -84,15 +85,11 @@ export function LottoNumberPreview({
       <div className="preview-orb preview-orb-top" aria-hidden="true" />
       <div className="preview-orb preview-orb-bottom" aria-hidden="true" />
 
-      <header className="preview-header">
-        <Link className="brand" href="/" aria-label="로또 6/45 홈">
-          <span className="brand-mark" aria-hidden="true">
-            6
-          </span>
-          <span>LOTTO 6/45</span>
-        </Link>
-        <AuthControl isConfigured={isConfigured} isSignedIn={isSignedIn} />
-      </header>
+      <SiteHeader
+        displayName={displayName}
+        isConfigured={isConfigured}
+        isSignedIn={isSignedIn}
+      />
 
       <section className="preview-content" aria-labelledby="preview-title">
         <p className="preview-eyebrow">이번 주, 가볍게 한 번</p>

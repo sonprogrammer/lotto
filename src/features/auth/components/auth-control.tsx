@@ -3,11 +3,16 @@
 import { useAuthControl } from "../hooks/use-auth-control";
 
 type AuthControlProps = {
+  displayName?: string;
   isConfigured: boolean;
   isSignedIn: boolean;
 };
 
-export function AuthControl({ isConfigured, isSignedIn }: AuthControlProps) {
+export function AuthControl({
+  displayName,
+  isConfigured,
+  isSignedIn,
+}: AuthControlProps) {
   const {
     errorMessage,
     explainMissingConfiguration,
@@ -20,7 +25,9 @@ export function AuthControl({ isConfigured, isSignedIn }: AuthControlProps) {
     <div className="auth-control">
       {isSignedIn ? (
         <div className="auth-control-signed-in">
-          <span className="auth-signed-in-label">카카오 로그인됨</span>
+          <span className="auth-signed-in-label">
+            {displayName || "내 계정"}
+          </span>
           <button
             className="auth-button auth-button-signed-in"
             type="button"

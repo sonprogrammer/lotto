@@ -6,7 +6,7 @@ import {
   OAUTH_STATE_COOKIE_NAME,
   SESSION_COOKIE_NAME,
 } from "@/features/auth/server/cookies";
-import { getKakaoUserId } from "@/features/auth/server/kakao-oauth";
+import { getKakaoUserProfile } from "@/features/auth/server/kakao-oauth";
 import { createAppSession } from "@/features/auth/server/session-store";
 import { isOAuthStateValid } from "@/features/auth/server/oauth-state";
 import { findOrCreateKakaoUser } from "@/features/auth/server/user-store";
@@ -20,9 +20,12 @@ export async function GET(request: NextRequest) {
   if (params.has("error") || !params.get("code")) return redirectToError();
 
   try {
-    const kakaoId = await getKakaoUserId(params.get("code")!);
+    const kakaoProfile = await getKakaoUserProfile(params.get("code")!);
     const siteOrigin = new URL(getKakaoConfig().redirectUri).origin;
-    const { userId } = await findOrCreateKakaoUser(kakaoId);
+    const { userId } = await findOrCreateKakaoUser(
+      kakaoProfile.kakaoId,
+      kakaoProfile.nickname,
+    );
     const sessionToken = await createAppSession(userId);
     const response = NextResponse.redirect(new URL("/", siteOrigin), {
       status: 303,

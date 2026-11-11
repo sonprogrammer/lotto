@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createKakaoAuthorizationUrl, getKakaoUserId } from "./kakao-oauth";
+import {
+  createKakaoAuthorizationUrl,
+  getKakaoUserProfile,
+} from "./kakao-oauth";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -16,7 +19,7 @@ function configureKakao() {
 }
 
 describe("Kakao OAuth", () => {
-  it("builds the authorization URL without requesting profile scopes", () => {
+  it("requests only the required Kakao nickname scope", () => {
     configureKakao();
     const url = new URL(createKakaoAuthorizationUrl("random-state"));
     expect(url.origin + url.pathname).toBe(
@@ -27,10 +30,10 @@ describe("Kakao OAuth", () => {
       "https://lotto.example/api/auth/kakao/callback",
     );
     expect(url.searchParams.get("state")).toBe("random-state");
-    expect(url.searchParams.has("scope")).toBe(false);
+    expect(url.searchParams.get("scope")).toBe("profile_nickname");
   });
 
-  it("exchanges the code and returns only Kakao's stable user ID", async () => {
+  it("exchanges the code and returns the user ID and agreed nickname", async () => {
     configureKakao();
     const fetchMock = vi
       .fn()
@@ -47,14 +50,17 @@ describe("Kakao OAuth", () => {
         new Response(
           JSON.stringify({
             id: 123456,
-            kakao_account: { email: "private@example.com" },
+            kakao_account: { profile: { nickname: "손영진" } },
           }),
           { status: 200 },
         ),
       );
     vi.stubGlobal("fetch", fetchMock);
 
-    expect(await getKakaoUserId("auth-code")).toBe("123456");
+    expect(await getKakaoUserProfile("auth-code")).toEqual({
+      kakaoId: "123456",
+      nickname: "손영진",
+    });
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[0][0])).toContain(
       "https://kauth.kakao.com/oauth/token",
@@ -76,6 +82,25 @@ describe("Kakao OAuth", () => {
       "fetch",
       vi.fn().mockResolvedValue(new Response("{}", { status: 401 })),
     );
-    await expect(getKakaoUserId("bad-code")).rejects.toThrow();
+    await expect(getKakaoUserProfile("bad-code")).rejects.toThrow();
+  });
+
+  it("rejects a Kakao response without the required nickname", async () => {
+    configureKakao();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ access_token: "access-secret" }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: 123456 }), { status: 200 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getKakaoUserProfile("auth-code")).rejects.toThrow(
+      "Kakao user response is invalid",
+    );
   });
 });

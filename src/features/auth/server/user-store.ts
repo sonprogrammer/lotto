@@ -1,9 +1,11 @@
 import { getMongoDb } from "@/shared/server/mongodb/client";
+import { ObjectId } from "mongodb";
 
-type KakaoUser = { kakaoId: string; createdAt: Date };
+type KakaoUser = { kakaoId: string; nickname: string; createdAt: Date };
 
 export async function findOrCreateKakaoUser(
   kakaoId: string,
+  nickname: string,
 ): Promise<{ userId: string }> {
   const collection = (await getMongoDb()).collection<KakaoUser>("users");
   await collection.createIndex({ kakaoId: 1 }, { unique: true });
@@ -11,7 +13,10 @@ export async function findOrCreateKakaoUser(
   try {
     user = await collection.findOneAndUpdate(
       { kakaoId },
-      { $setOnInsert: { kakaoId, createdAt: new Date() } },
+      {
+        $set: { nickname },
+        $setOnInsert: { kakaoId, createdAt: new Date() },
+      },
       { upsert: true, returnDocument: "after" },
     );
   } catch (error) {
@@ -26,4 +31,16 @@ export async function findOrCreateKakaoUser(
   }
   if (!user) throw new Error("Unable to find or create Kakao user");
   return { userId: user._id.toHexString() };
+}
+
+export async function findKakaoUserById(
+  userId: string,
+): Promise<{ nickname: string } | null> {
+  if (!ObjectId.isValid(userId)) return null;
+  const user = await (
+    await getMongoDb()
+  )
+    .collection<KakaoUser>("users")
+    .findOne({ _id: new ObjectId(userId) });
+  return user?.nickname ? { nickname: user.nickname } : null;
 }
