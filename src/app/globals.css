@@ -302,6 +302,78 @@ a {
   letter-spacing: -0.035em;
 }
 
+.frequency-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.frequency-help {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.frequency-help-button {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #a4afbd;
+  border-radius: 50%;
+  background: transparent;
+  color: #78869a;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+}
+
+.frequency-help-button:focus-visible {
+  outline: 2px solid #4978c8;
+  outline-offset: 3px;
+}
+
+.frequency-tooltip {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 9px);
+  right: 0;
+  width: min(290px, calc(100vw - 48px));
+  padding: 12px 14px;
+  border: 1px solid rgb(226 232 240 / 95%);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgb(36 53 78 / 16%);
+  color: #46566d;
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 1.65;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-3px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    visibility 160ms ease;
+  pointer-events: none;
+}
+
+.frequency-help:hover .frequency-tooltip,
+.frequency-help-button:focus-visible + .frequency-tooltip,
+.frequency-help[data-open="true"] .frequency-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frequency-tooltip {
+    transition: none;
+  }
+}
+
 .analysis-section-note {
   color: #8997a9;
   font-size: 11px;

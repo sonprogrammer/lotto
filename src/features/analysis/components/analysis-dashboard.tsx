@@ -2,6 +2,7 @@
 
 import { SiteHeader } from "@/widgets/site-header";
 import { useRunWeeklyAnalysis } from "../hooks/use-run-weekly-analysis";
+import { FrequencyGapHelp } from "./frequency-gap-help";
 
 type AnalysisDashboardProps = {
   displayName?: string;
@@ -86,7 +87,10 @@ export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
               <div className="analysis-section-heading">
                 <div>
                   <p className="analysis-card-eyebrow">NUMBER FREQUENCY</p>
-                  <h2 id="frequency-title">번호별 출현 횟수와 미출현 회차</h2>
+                  <div className="frequency-title-row">
+                    <h2 id="frequency-title">번호별 출현 횟수와 미출현 회차</h2>
+                    <FrequencyGapHelp />
+                  </div>
                 </div>
                 <span className="analysis-section-note">
                   {analysis.drawCount}회 기준

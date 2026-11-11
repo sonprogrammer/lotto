@@ -49,6 +49,31 @@ it("runs analysis only after the user clicks and displays real results", async (
   });
 });
 
+it("explains the number of consecutive rounds a number has been absent", async () => {
+  fetchMock.mockResolvedValue(
+    new Response(
+      JSON.stringify({ analysis, drawCount: 1249, latestRound: 1249 }),
+      { status: 200 },
+    ),
+  );
+  renderDashboard();
+  await userEvent.click(screen.getByRole("button", { name: "분석하기" }));
+
+  const helpButton = screen.getByRole("button", { name: "미출현 회차 설명" });
+  await userEvent.hover(helpButton);
+
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(
+    "1249회 기준 1회 미출현은 1249회에는 나오지 않고 1248회에는 나왔다는 뜻이에요.",
+  );
+  expect(screen.getByRole("tooltip")).toHaveTextContent(
+    "미출현 횟수가 길어도 다음 회차 당첨 확률이 높아지지는 않아요.",
+  );
+  await userEvent.click(helpButton);
+  expect(helpButton).toHaveAttribute("aria-expanded", "true");
+  await userEvent.click(helpButton);
+  expect(helpButton).toHaveAttribute("aria-expanded", "false");
+});
+
 it("shows a skeleton and prevents duplicate analysis requests while pending", async () => {
   let resolveRequest!: (response: Response) => void;
   fetchMock.mockReturnValue(
