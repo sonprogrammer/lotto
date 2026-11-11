@@ -5,17 +5,24 @@ import { getCurrentUser } from "@/features/auth/server/current-session";
 export async function AuthAwarePreview() {
   let isConfigured = false;
   let isSignedIn = false;
+  let displayName: string | undefined;
 
   try {
     getKakaoConfig();
     getMongoConfig();
     isConfigured = true;
-    isSignedIn = Boolean(await getCurrentUser());
+    const currentUser = await getCurrentUser();
+    isSignedIn = Boolean(currentUser);
+    displayName = currentUser?.nickname;
   } catch {
     isConfigured = false;
   }
 
   return (
-    <LottoNumberPreview isConfigured={isConfigured} isSignedIn={isSignedIn} />
+    <LottoNumberPreview
+      displayName={displayName}
+      isConfigured={isConfigured}
+      isSignedIn={isSignedIn}
+    />
   );
 }

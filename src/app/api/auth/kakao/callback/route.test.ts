@@ -5,7 +5,7 @@ import { GET } from "./route";
 
 const mocks = vi.hoisted(() => ({
   isOAuthStateValid: vi.fn(),
-  getKakaoUserId: vi.fn(),
+  getKakaoUserProfile: vi.fn(),
   findOrCreateKakaoUser: vi.fn(),
   createAppSession: vi.fn(),
 }));
@@ -13,7 +13,7 @@ vi.mock("@/features/auth/server/oauth-state", () => ({
   isOAuthStateValid: mocks.isOAuthStateValid,
 }));
 vi.mock("@/features/auth/server/kakao-oauth", () => ({
-  getKakaoUserId: mocks.getKakaoUserId,
+  getKakaoUserProfile: mocks.getKakaoUserProfile,
 }));
 vi.mock("@/features/auth/server/user-store", () => ({
   findOrCreateKakaoUser: mocks.findOrCreateKakaoUser,
@@ -27,7 +27,10 @@ afterEach(() => vi.unstubAllEnvs());
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.isOAuthStateValid.mockReturnValue(true);
-  mocks.getKakaoUserId.mockResolvedValue("kakao-user-id");
+  mocks.getKakaoUserProfile.mockResolvedValue({
+    kakaoId: "kakao-user-id",
+    nickname: "손영진",
+  });
   mocks.findOrCreateKakaoUser.mockResolvedValue({ userId: "app-user-id" });
   mocks.createAppSession.mockResolvedValue("session-secret");
 });
@@ -54,8 +57,11 @@ describe("Kakao callback", () => {
       "state-value",
       "state-value",
     );
-    expect(mocks.getKakaoUserId).toHaveBeenCalledWith("auth-code");
-    expect(mocks.findOrCreateKakaoUser).toHaveBeenCalledWith("kakao-user-id");
+    expect(mocks.getKakaoUserProfile).toHaveBeenCalledWith("auth-code");
+    expect(mocks.findOrCreateKakaoUser).toHaveBeenCalledWith(
+      "kakao-user-id",
+      "손영진",
+    );
     expect(mocks.createAppSession).toHaveBeenCalledWith("app-user-id");
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toBe("https://lotto.example/");
@@ -99,10 +105,25 @@ describe("Kakao callback", () => {
   });
 
   it("redirects safely when provider or storage work fails", async () => {
-    mocks.getKakaoUserId.mockRejectedValue(new Error("provider detail"));
+    mocks.getKakaoUserProfile.mockRejectedValue(new Error("provider detail"));
     const response = await GET(request("code=auth-code&state=state-value"));
     expect(response.headers.get("location")).toContain("/auth/error");
     expect(response.headers.get("location")).not.toContain("provider detail");
     expect(mocks.createAppSession).not.toHaveBeenCalled();
+  });
+
+  it("stores the agreed Kakao nickname with the account", async () => {
+    vi.stubEnv("KAKAO_REST_API_KEY", "rest-key");
+    vi.stubEnv("KAKAO_CLIENT_SECRET", "client-secret");
+    vi.stubEnv(
+      "KAKAO_REDIRECT_URI",
+      "https://lotto.example/api/auth/kakao/callback",
+    );
+    await GET(request("code=auth-code&state=state-value"));
+
+    expect(mocks.findOrCreateKakaoUser).toHaveBeenCalledWith(
+      "kakao-user-id",
+      "손영진",
+    );
   });
 });

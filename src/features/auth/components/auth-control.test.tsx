@@ -41,6 +41,13 @@ describe("AuthControl", () => {
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
+  it("shows the signed-in user's display name", () => {
+    render(<AuthControl displayName="손영진" isConfigured isSignedIn />);
+
+    expect(screen.getByText("손영진")).toBeInTheDocument();
+    expect(screen.queryByText("카카오 로그인됨")).not.toBeInTheDocument();
+  });
+
   it("signs out and refreshes the visible session state", async () => {
     render(<AuthControl isConfigured isSignedIn />);
 
