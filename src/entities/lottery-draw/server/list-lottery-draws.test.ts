@@ -30,3 +30,18 @@ it("loads only analysis fields ordered by round", async () => {
   expect(sortMock).toHaveBeenCalledWith({ roundNumber: 1 });
   expect(toArrayMock).toHaveBeenCalledOnce();
 });
+
+it("returns valid analysis rows", async () => {
+  const rows = [{ roundNumber: 1162, numbers: [5, 10, 16, 23, 35, 44] }];
+  toArrayMock.mockResolvedValue(rows);
+
+  await expect(listLotteryDraws()).resolves.toEqual(rows);
+});
+
+it("rejects invalid stored analysis rows", async () => {
+  toArrayMock.mockResolvedValue([
+    { roundNumber: 1162, numbers: [5, 10, 16, 23, 35, 35] },
+  ]);
+
+  await expect(listLotteryDraws()).rejects.toThrow();
+});

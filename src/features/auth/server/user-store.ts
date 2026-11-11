@@ -1,13 +1,17 @@
 import { getMongoDb } from "@/shared/server/mongodb/client";
 import { ObjectId } from "mongodb";
-
-type KakaoUser = { kakaoId: string; nickname: string; createdAt: Date };
+import {
+  KakaoUserDocumentSchema,
+  type KakaoUserDocument,
+} from "@/entities/user";
 
 export async function findOrCreateKakaoUser(
   kakaoId: string,
   nickname: string,
 ): Promise<{ userId: string }> {
-  const collection = (await getMongoDb()).collection<KakaoUser>("users");
+  const collection = (await getMongoDb()).collection<KakaoUserDocument>(
+    "users",
+  );
   await collection.createIndex({ kakaoId: 1 }, { unique: true });
   let user;
   try {
@@ -30,7 +34,10 @@ export async function findOrCreateKakaoUser(
     user = await collection.findOne({ kakaoId });
   }
   if (!user) throw new Error("Unable to find or create Kakao user");
-  return { userId: user._id.toHexString() };
+  const validatedUser = KakaoUserDocumentSchema.parse(user);
+  if (!validatedUser.nickname)
+    throw new Error("Kakao user profile is missing a nickname");
+  return { userId: validatedUser._id.toHexString() };
 }
 
 export async function findKakaoUserById(
@@ -40,7 +47,9 @@ export async function findKakaoUserById(
   const user = await (
     await getMongoDb()
   )
-    .collection<KakaoUser>("users")
+    .collection<KakaoUserDocument>("users")
     .findOne({ _id: new ObjectId(userId) });
-  return user?.nickname ? { nickname: user.nickname } : null;
+  if (!user) return null;
+  const validatedUser = KakaoUserDocumentSchema.parse(user);
+  return validatedUser.nickname ? { nickname: validatedUser.nickname } : null;
 }
