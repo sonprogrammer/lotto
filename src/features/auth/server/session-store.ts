@@ -1,19 +1,18 @@
 import { createHash, randomBytes } from "node:crypto";
 import { getMongoDb } from "@/shared/server/mongodb/client";
-
-type AppSession = {
-  userId: string;
-  tokenHash: string;
-  createdAt: Date;
-  expiresAt: Date;
-};
+import {
+  AppSessionDocumentSchema,
+  type AppSessionDocument,
+} from "./session-document";
 
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 const hashToken = (token: string) =>
   createHash("sha256").update(token).digest("hex");
 
 async function getSessionCollection() {
-  const collection = (await getMongoDb()).collection<AppSession>("appSessions");
+  const collection = (await getMongoDb()).collection<AppSessionDocument>(
+    "appSessions",
+  );
   await Promise.all([
     collection.createIndex({ tokenHash: 1 }, { unique: true }),
     collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
@@ -27,12 +26,13 @@ export async function createAppSession(
 ): Promise<string> {
   const token = randomBytes(32).toString("base64url");
   const collection = await getSessionCollection();
-  await collection.insertOne({
+  const session = AppSessionDocumentSchema.parse({
     userId,
     tokenHash: hashToken(token),
     createdAt: now,
     expiresAt: new Date(now.getTime() + SESSION_DURATION_MS),
   });
+  await collection.insertOne(session);
   return token;
 }
 
@@ -45,8 +45,10 @@ export async function findActiveAppSession(
     tokenHash: hashToken(token),
     expiresAt: { $gt: now },
   });
-  if (!session || session.expiresAt.getTime() <= now.getTime()) return null;
-  return { userId: session.userId };
+  if (!session) return null;
+  const validatedSession = AppSessionDocumentSchema.parse(session);
+  if (validatedSession.expiresAt.getTime() <= now.getTime()) return null;
+  return { userId: validatedSession.userId };
 }
 
 export async function deleteAppSession(token: string): Promise<void> {

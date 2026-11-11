@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { ObjectId } from "mongodb";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createAppSession,
@@ -16,16 +17,17 @@ vi.mock("@/shared/server/mongodb/client", () => ({
   getMongoDb: async () => ({ collection: () => db }),
 }));
 const now = new Date("2026-11-08T00:00:00.000Z");
+const userId = new ObjectId().toHexString();
 beforeEach(() => vi.clearAllMocks());
 
 describe("app sessions", () => {
   it("stores only a SHA-256 hash of a unique 32-byte secret for 30 days", async () => {
-    const token = await createAppSession("user-1", now);
-    const other = await createAppSession("user-1", now);
+    const token = await createAppSession(userId, now);
+    const other = await createAppSession(userId, now);
     expect(Buffer.from(token, "base64url")).toHaveLength(32);
     expect(other).not.toBe(token);
     expect(db.insertOne).toHaveBeenCalledWith({
-      userId: "user-1",
+      userId,
       tokenHash: createHash("sha256").update(token).digest("hex"),
       createdAt: now,
       expiresAt: new Date("2026-12-08T00:00:00.000Z"),
@@ -42,12 +44,13 @@ describe("app sessions", () => {
 
   it("looks up the hash and requires an expiry strictly after the request time", async () => {
     db.findOne.mockResolvedValue({
-      userId: "user-1",
-      tokenHash: "stored",
+      userId,
+      tokenHash: "b".repeat(64),
+      createdAt: new Date("2026-11-07T00:00:00.000Z"),
       expiresAt: new Date("2026-12-08"),
     });
     expect(await findActiveAppSession("secret", now)).toEqual({
-      userId: "user-1",
+      userId,
     });
     expect(db.findOne).toHaveBeenCalledWith({
       tokenHash:
@@ -59,7 +62,12 @@ describe("app sessions", () => {
   it.each([new Date("2026-11-07"), now])(
     "rejects expired sessions even before TTL cleanup (%s)",
     async (expiresAt) => {
-      db.findOne.mockResolvedValue({ userId: "user-1", expiresAt });
+      db.findOne.mockResolvedValue({
+        userId,
+        tokenHash: "c".repeat(64),
+        createdAt: new Date("2026-10-01T00:00:00.000Z"),
+        expiresAt,
+      });
       expect(await findActiveAppSession("expired", now)).toBeNull();
     },
   );

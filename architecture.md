@@ -94,18 +94,28 @@ src/
 
 ## 7. 예상 데이터 구조
 
-현재 인증에서 사용하는 MongoDB 컬렉션입니다. 로또 관련 컬렉션은 기능 구현에 맞춰 구체 설계합니다.
+MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `model/document.ts`에 둡니다. 현재 사용하는 사용자·세션·회차 조회 저장소는 읽거나 쓰기 직전에 Zod 검증을 적용합니다. 새 저장소도 같은 기준을 따릅니다. `_id`는 ObjectId이고, 사용자 소유 문서의 `userId`는 현재 인증과 호환되는 24자리 ObjectId 16진수 문자열입니다.
 
-- `users`: 카카오 고유 사용자 ID, 필수 동의된 프로필 닉네임, 계정 생성 시각
-- `appSessions`: 우리 서비스 세션의 해시, 사용자 ID, 생성 시각, 로그인 후 30일인 만료 시각을 저장. 세션 확인 시 만료를 직접 검사하고 TTL 인덱스는 만료 자료 정리에 사용
-- `lottery_draws`: 분석에 쓰는 `roundNumber`와 `numbers`(당첨 번호 6개)를 포함합니다. 결과 수집 구현에서 보너스 번호, 등수별 당첨금, 출처와 갱신 상태를 확정합니다.
-- `saved_combinations`: 사용자 번호 조합, 연결된 추첨 회차, 당첨 결과
-- `saved_prompts`: 사용자별 저장 프롬프트(최대 5개)
-- `push_subscriptions`: 기기별 푸시 구독
-- `notifications`: 사용자별 알림과 읽음 여부
-- `simulation_runs` 및 `simulation_results`: 시뮬레이션 조건과 결과
+### 현재·MVP 문서
 
-각 사용자 자료를 조회할 때는 사용자 ID를 조건에 반드시 포함합니다. 회차 번호와 사용자 ID처럼 중복이 허용되지 않아야 하는 값에는 고유 인덱스를 둘지 구체 설계에서 정합니다.
+| 컬렉션               | 필드                                                                                                                                                                                                                            | 인덱스                                                       | 상태                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `users`              | `_id: ObjectId`, `kakaoId: string`, `nickname?: string`, `createdAt: Date`                                                                                                                                                      | `kakaoId` 고유 인덱스 적용                                   | 새 카카오 로그인은 닉네임을 저장. 기존 계정에서 닉네임이 없는 문서는 다음 로그인 때 갱신 |
+| `appSessions`        | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `tokenHash: 64자리 SHA-256 16진수`, `createdAt: Date`, `expiresAt: Date`                                                                                                           | `tokenHash` 고유 인덱스와 `expiresAt` TTL 인덱스 적용        | 로그인 기능에서 사용                                                                     |
+| `lottery_draws`      | `_id: ObjectId`, `roundNumber: 양의 정수`, `numbers: 1–45의 중복 없는 정수 6개`, `bonusNumber: 1–45의 정수(당첨 번호와 중복 불가)`, `prizesByRank: { rank: 1–5, winnerCount: 0 이상의 정수, amountPerWinner: 0 이상의 정수 }[]` | `roundNumber` 고유 인덱스 후보. 수집 기능(#9)에서 실제 적용  | 회차 조회·통계 사용, 수집 기능은 별도 이슈                                               |
+| `saved_combinations` | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `targetRound: 양의 정수`, `numbers: 1–45의 중복 없는 정수 6개`, `generationMethod: automatic/selected/ai-assisted`, `analysisSummary: string`, `createdAt: Date`                   | `{ userId, createdAt desc }`, `{ userId, targetRound }` 후보 | 조합마다 문서 하나. 등수와 당첨금은 연결된 회차에서 계산하며 조합 문서에 복사하지 않음   |
+| `saved_prompts`      | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `prompt: string`, `sortOrder: 0 이상의 정수`, `createdAt: Date`, `updatedAt: Date`                                                                                                 | `{ userId, sortOrder }` 후보                                 | 사용자별 최대 5개는 저장 작업에서 보장. 목록 라벨은 프롬프트 본문 일부                   |
+
+숫자 배열은 1–45의 정수 6개로 고정하고 중복을 금지합니다. 추첨 당첨 번호와 보너스 번호도 서로 달라야 합니다. 조합 생성 방식은 `automatic`, `selected`, `ai-assisted` 중 하나입니다. 등수·당첨금은 대상 회차 문서의 번호와 등수별 자료로 계산해 정정 시 중복된 결과가 어긋나는 것을 피합니다.
+
+`prizesByRank`의 등수는 1–5 사이에서 중복될 수 없습니다. 어떤 등수 자료가 반드시 모두 있어야 하는지는 당첨 번호 제공처의 계약을 확인한 뒤 정합니다.
+
+### 후속 기능 문서
+
+- `push_subscriptions`, `notifications`: 이슈 #11에서 권한·해지·전송 실패·중복 방지 정책과 함께 모델을 정합니다.
+- `simulation_runs`, `simulation_results`: 이슈 #12에서 저장 여부, 재현 조건, 결과 보관 정책을 정한 뒤 모델을 추가합니다.
+
+인덱스가 “후보”로 표시된 컬렉션은 아직 쓰기 저장소가 구현되지 않았으므로 현재 MongoDB에 적용됐다고 보장하지 않습니다. 사용자 자료 조회에는 항상 인증 세션에서 확인한 사용자 ID를 조건으로 사용합니다.
 
 세션 만료 문서는 MongoDB TTL 인덱스로 정리하되, TTL 정리는 만료 즉시 실행된다고 보장되지 않습니다. 따라서 서버는 세션을 조회할 때마다 만료 시각도 직접 확인합니다.
 

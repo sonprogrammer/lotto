@@ -12,14 +12,16 @@ vi.mock("@/shared/server/mongodb/client", () => ({
 }));
 beforeEach(() => vi.clearAllMocks());
 
-it("uses a unique Kakao ID and atomic insert-only upsert for concurrent logins", async () => {
+it("uses a unique Kakao ID and atomic upsert to refresh the nickname", async () => {
+  const userId = new ObjectId();
   db.findOneAndUpdate.mockResolvedValue({
-    _id: { toHexString: () => "user-id" },
+    _id: userId,
     kakaoId: "123",
+    nickname: "손영진",
     createdAt: new Date(),
   });
   expect(await findOrCreateKakaoUser("123", "손영진")).toEqual({
-    userId: "user-id",
+    userId: userId.toHexString(),
   });
   expect(db.createIndex).toHaveBeenCalledWith({ kakaoId: 1 }, { unique: true });
   expect(db.findOneAndUpdate).toHaveBeenCalledWith(
@@ -33,14 +35,16 @@ it("uses a unique Kakao ID and atomic insert-only upsert for concurrent logins",
 });
 
 it("returns the existing user when a racing upsert hits the unique constraint", async () => {
+  const userId = new ObjectId();
   db.findOneAndUpdate.mockRejectedValue({ code: 11000 });
   db.findOne.mockResolvedValue({
-    _id: { toHexString: () => "existing-id" },
+    _id: userId,
     kakaoId: "123",
+    nickname: "손영진",
     createdAt: new Date(),
   });
   expect(await findOrCreateKakaoUser("123", "손영진")).toEqual({
-    userId: "existing-id",
+    userId: userId.toHexString(),
   });
   expect(db.findOne).toHaveBeenCalledWith({ kakaoId: "123" });
 });
@@ -53,13 +57,29 @@ it("propagates storage errors", async () => {
 });
 
 it("loads a stored nickname by the authenticated user ID", async () => {
-  const userId = "507f1f77bcf86cd799439011";
-  db.findOne.mockResolvedValue({ nickname: "손영진" });
+  const userId = new ObjectId().toHexString();
+  db.findOne.mockResolvedValue({
+    _id: new ObjectId(userId),
+    kakaoId: "123",
+    nickname: "손영진",
+    createdAt: new Date(),
+  });
 
   await expect(findKakaoUserById(userId)).resolves.toEqual({
     nickname: "손영진",
   });
   expect(db.findOne).toHaveBeenCalledWith({ _id: new ObjectId(userId) });
+});
+
+it("returns no nickname for a legacy user until the next Kakao login", async () => {
+  const userId = new ObjectId().toHexString();
+  db.findOne.mockResolvedValue({
+    _id: new ObjectId(userId),
+    kakaoId: "123",
+    createdAt: new Date(),
+  });
+
+  await expect(findKakaoUserById(userId)).resolves.toBeNull();
 });
 
 it("does not query MongoDB for an invalid user ID", async () => {
