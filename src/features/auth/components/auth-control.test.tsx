@@ -19,12 +19,15 @@ describe("AuthControl", () => {
     refreshMock.mockReset();
   });
 
-  it("starts Kakao OAuth through a same-origin link", async () => {
+  it("offers Kakao OAuth as a button instead of a link", () => {
     render(<AuthControl isConfigured isSignedIn={false} />);
 
     expect(
-      screen.getByRole("link", { name: "카카오로 로그인" }),
-    ).toHaveAttribute("href", "/api/auth/kakao");
+      screen.getByRole("button", { name: "카카오로 로그인" }),
+    ).toHaveAttribute("type", "button");
+    expect(
+      screen.queryByRole("link", { name: "카카오로 로그인" }),
+    ).not.toBeInTheDocument();
   });
 
   it("explains that setup is required when auth is not configured", async () => {
