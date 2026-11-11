@@ -27,6 +27,9 @@ export function SiteHeader({
           <Link className="analysis-link" href="/analysis">
             이번 주 분석
           </Link>
+          <Link className="analysis-link" href="/history">
+            당첨 내역
+          </Link>
         </nav>
       )}
       <AuthControl

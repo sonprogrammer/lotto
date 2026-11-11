@@ -26,8 +26,18 @@ export function AuthControl({
       {isSignedIn ? (
         <div className="auth-control-signed-in">
           <span className="auth-signed-in-label">
-            {displayName || "내 계정"}
+            {displayName || "이름 확인 필요"}
           </span>
+          {!displayName && (
+            <button
+              className="auth-profile-refresh-button"
+              type="button"
+              onClick={startSignIn}
+              disabled={isPending}
+            >
+              카카오 프로필 갱신
+            </button>
+          )}
           <button
             className="auth-button auth-button-signed-in"
             type="button"

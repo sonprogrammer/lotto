@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { listLotteryDraws } from "@/entities/lottery-draw";
 import { AnalysisDashboard } from "@/features/analysis/components/analysis-dashboard";
-import {
-  calculateWeeklyAnalysis,
-  type WeeklyAnalysis,
-} from "@/features/analysis";
 import { getCurrentUser } from "@/features/auth/server/current-session";
 
 export const metadata: Metadata = {
@@ -19,21 +14,5 @@ export default async function AnalysisPage() {
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/");
 
-  let analysis: WeeklyAnalysis | null = null;
-  let state: "ready" | "error" = "ready";
-
-  try {
-    const draws = await listLotteryDraws();
-    analysis = calculateWeeklyAnalysis(draws);
-  } catch {
-    state = "error";
-  }
-
-  return (
-    <AnalysisDashboard
-      analysis={analysis}
-      displayName={currentUser.nickname}
-      state={state}
-    />
-  );
+  return <AnalysisDashboard displayName={currentUser.nickname ?? undefined} />;
 }

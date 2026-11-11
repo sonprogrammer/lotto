@@ -13,7 +13,7 @@ export async function AuthAwarePreview() {
     isConfigured = true;
     const currentUser = await getCurrentUser();
     isSignedIn = Boolean(currentUser);
-    displayName = currentUser?.nickname;
+    displayName = currentUser?.nickname ?? undefined;
   } catch {
     isConfigured = false;
   }

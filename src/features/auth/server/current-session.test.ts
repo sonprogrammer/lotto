@@ -38,11 +38,11 @@ describe("getCurrentUser", () => {
     expect(findKakaoUserByIdMock).toHaveBeenCalledWith("user-1");
   });
 
-  it("provides a fallback for sessions created before nickname storage", async () => {
+  it("signals that the Kakao profile needs refresh when no nickname is stored", async () => {
     findKakaoUserByIdMock.mockResolvedValue(null);
     await expect(getCurrentUser()).resolves.toEqual({
       userId: "user-1",
-      nickname: "내 계정",
+      nickname: null,
     });
   });
 
