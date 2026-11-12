@@ -6,6 +6,15 @@ import { GenerationResults } from "./generation-results";
 import "./generation.css";
 
 type Props = { displayName?: string };
+
+function getNumberTone(number: number) {
+  if (number <= 10) return "gold";
+  if (number <= 20) return "blue";
+  if (number <= 30) return "red";
+  if (number <= 40) return "gray";
+  return "green";
+}
+
 export function GenerationDashboard({ displayName }: Props) {
   const {
     method,
@@ -46,19 +55,21 @@ export function GenerationDashboard({ displayName }: Props) {
             <div className="generation-methods">
               {(
                 [
-                  ["automatic", "자동 생성", "통계 기반으로 조합을 만듭니다."],
+                  ["automatic", "01", "자동 생성", "통계 기반 조합"],
                   [
                     "selected",
-                    "선택 번호 포함",
-                    "고른 번호를 모든 조합에 포함합니다.",
+                    "02",
+                    "번호 직접 선택",
+                    "고른 번호를 모든 조합에 넣어요.",
                   ],
                   [
                     "ai-assisted",
-                    "AI 추천",
-                    "고른 번호와 AI 조건을 함께 반영합니다.",
+                    "AI",
+                    "AI 추천 조합",
+                    "고른 번호와 주신 의견을 함께 고려해 반영해요.",
                   ],
                 ] as const
-              ).map(([value, label, description]) => (
+              ).map(([value, marker, label, description]) => (
                 <label className="generation-method" key={value}>
                   <input
                     type="radio"
@@ -68,8 +79,16 @@ export function GenerationDashboard({ displayName }: Props) {
                     checked={method === value}
                     onChange={() => changeMethod(value)}
                   />
-                  <strong>{label}</strong>
-                  <span>{description}</span>
+                  <span className="generation-method-marker" aria-hidden="true">
+                    {marker}
+                  </span>
+                  <span className="generation-method-copy">
+                    <strong>{label}</strong>
+                    <span>{description}</span>
+                  </span>
+                  <span className="generation-method-check" aria-hidden="true">
+                    ✓
+                  </span>
                 </label>
               ))}
             </div>
@@ -93,6 +112,7 @@ export function GenerationDashboard({ displayName }: Props) {
                       key={number}
                       aria-label={`${number}번 고정`}
                       aria-pressed={fixedNumbers.includes(number)}
+                      className={`generation-ball lotto-ball-${getNumberTone(number)}`}
                       disabled={
                         !fixedNumbers.includes(number) &&
                         fixedNumbers.length >=
@@ -176,7 +196,7 @@ export function GenerationDashboard({ displayName }: Props) {
           </div>
           <div className="generation-control generation-prompt">
             <label htmlFor="generation-prompt">
-              AI에게 전할 조건{" "}
+              생성에 참고할 의견{" "}
               <span className="generation-hint">선택 사항</span>
             </label>
             <textarea
@@ -184,11 +204,12 @@ export function GenerationDashboard({ displayName }: Props) {
               maxLength={500}
               value={prompt}
               onChange={(event) => changePrompt(event.target.value)}
-              placeholder="예: 홀수 3개를 포함해 주세요"
+              placeholder="원하는 조합 방향이나 참고할 점을 적어주세요. 예: 홀수가 3개 정도면 좋겠어요."
               rows={3}
             />
             <p className="generation-helper">
-              지원되는 조건만 반영합니다. {prompt.length}/500자
+              남겨주신 의견 중 반영할 수 있는 내용을 함께 고려합니다.{" "}
+              {prompt.length}/500자
             </p>
           </div>
           <button

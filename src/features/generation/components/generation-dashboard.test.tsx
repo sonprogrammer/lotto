@@ -68,7 +68,7 @@ it("submits the default five combinations for the recent 30 draws", async () => 
 
 it("requires selected numbers and limits six fixed numbers to one combination", async () => {
   renderDashboard();
-  await userEvent.click(screen.getByRole("radio", { name: "선택 번호 포함" }));
+  await userEvent.click(screen.getByRole("radio", { name: "번호 직접 선택" }));
   expect(screen.getByRole("button", { name: "조합 생성하기" })).toBeDisabled();
   for (const number of [1, 2, 3, 4, 5, 6]) {
     await userEvent.click(
@@ -85,7 +85,25 @@ it("requires selected numbers and limits six fixed numbers to one combination", 
 
 it("prevents selecting more fixed numbers than the method supports", async () => {
   renderDashboard();
-  await userEvent.click(screen.getByRole("radio", { name: "AI 추천" }));
+  await userEvent.click(screen.getByRole("radio", { name: "AI 추천 조합" }));
+  expect(screen.getByRole("button", { name: "1번 고정" })).toHaveClass(
+    "lotto-ball-gold",
+  );
+  expect(screen.getByRole("button", { name: "11번 고정" })).toHaveClass(
+    "lotto-ball-blue",
+  );
+  expect(screen.getByRole("button", { name: "21번 고정" })).toHaveClass(
+    "lotto-ball-red",
+  );
+  expect(screen.getByRole("button", { name: "31번 고정" })).toHaveClass(
+    "lotto-ball-gray",
+  );
+  expect(screen.getByRole("button", { name: "41번 고정" })).toHaveClass(
+    "lotto-ball-green",
+  );
+  expect(
+    screen.getByText("고른 번호와 주신 의견을 함께 고려해 반영해요."),
+  ).toBeInTheDocument();
   for (const number of [1, 2, 3, 4, 5]) {
     await userEvent.click(
       screen.getByRole("button", { name: `${number}번 고정` }),

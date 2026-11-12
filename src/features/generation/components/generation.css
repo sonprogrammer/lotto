@@ -34,28 +34,96 @@
   gap: 10px;
 }
 .generation-method {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  min-height: 118px;
-  padding: 16px;
-  border: 1px solid #dce4ee;
-  border-radius: 16px;
+  position: relative;
+  display: flex;
+  min-height: 112px;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fff, #f9fbfe);
   color: #64758a;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
+  box-shadow: 0 5px 16px rgb(37 58 85 / 4%);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
 }
 .generation-method:has(input:checked) {
-  border-color: #45688f;
-  background: #f1f6fc;
+  border-color: #52739a;
+  background: linear-gradient(145deg, #f0f6fd, #e8f0fa);
+  box-shadow: 0 10px 24px rgb(39 69 104 / 12%);
+  transform: translateY(-2px);
+}
+.generation-method:hover {
+  border-color: #9aadc3;
+  box-shadow: 0 9px 22px rgb(39 69 104 / 10%);
 }
 .generation-method input {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
   accent-color: #315474;
+}
+.generation-method:focus-within {
+  outline: 3px solid #86b8ed;
+  outline-offset: 3px;
+}
+.generation-method-marker {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 1px solid #dfe8f3;
+  border-radius: 15px;
+  background: #edf3fa;
+  color: #385a7e;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.generation-method:has(input:checked) .generation-method-marker {
+  border-color: #c9d8e9;
+  background: #dce9f7;
+  color: #274b70;
+}
+.generation-method-copy {
+  display: grid;
+  gap: 4px;
+  padding-right: 20px;
+}
+.generation-method-check {
+  position: absolute;
+  right: 16px;
+  bottom: 13px;
+  color: #426b94;
+  font-size: 14px;
+  font-weight: 800;
+  opacity: 0;
+  transform: scale(0.75);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+.generation-method:has(input:checked) .generation-method-check {
+  opacity: 1;
+  transform: scale(1);
 }
 .generation-method strong {
   color: #263d5e;
-  font-size: 14px;
+  font-size: 15px;
+}
+.generation-method:has(input:checked) strong {
+  color: #203d5d;
 }
 .generation-hint,
 .generation-helper {
@@ -73,19 +141,46 @@
   gap: 8px;
 }
 .generation-picker button {
-  min-height: 42px;
-  border: 1px solid #dbe3ed;
-  border-radius: 12px;
-  background: #f8fafc;
-  color: #314764;
+  display: grid;
+  width: min(100%, 48px);
+  aspect-ratio: 1;
+  place-items: center;
+  justify-self: center;
+  border: 0;
+  border-radius: 50%;
   cursor: pointer;
   font: inherit;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 750;
+  box-shadow:
+    inset 0 3px 5px rgb(255 255 255 / 75%),
+    inset 0 -3px 6px rgb(30 45 65 / 14%),
+    0 4px 8px rgb(38 56 80 / 15%);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+.generation-picker button:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.06);
+  box-shadow:
+    inset 0 3px 5px rgb(255 255 255 / 75%),
+    inset 0 -3px 6px rgb(30 45 65 / 14%),
+    0 7px 12px rgb(38 56 80 / 20%);
 }
 .generation-picker button[aria-pressed="true"] {
-  background: #304d70;
-  border-color: #304d70;
-  color: #fff;
+  outline: 3px solid #263d5e;
+  outline-offset: 2px;
+  box-shadow:
+    inset 0 3px 5px rgb(255 255 255 / 70%),
+    inset 0 -3px 6px rgb(30 45 65 / 16%),
+    0 0 0 5px rgb(55 87 124 / 13%),
+    0 6px 13px rgb(38 56 80 / 18%);
+  transform: scale(1.04);
+}
+.generation-picker button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 .generation-settings {
   display: grid;
@@ -112,8 +207,17 @@
   color: #304560;
   font: inherit;
 }
+.generation-control select {
+  appearance: none;
+  padding-right: 46px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23536882' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 17px center;
+}
 .generation-control textarea {
-  resize: vertical;
+  min-height: 112px;
+  resize: none;
+  line-height: 1.65;
 }
 .generation-prompt .generation-helper {
   margin: 0;
@@ -199,10 +303,12 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #e8eff7;
-  color: #294869;
   font-weight: 700;
   font-size: 13px;
+  box-shadow:
+    inset 0 2px 4px rgb(255 255 255 / 68%),
+    inset 0 -3px 5px rgb(34 47 66 / 13%),
+    0 3px 7px rgb(36 52 73 / 12%);
 }
 .generation-result-details {
   display: grid;
@@ -261,6 +367,7 @@
   }
   .generation-method {
     min-height: 0;
+    padding: 15px;
   }
   .generation-picker {
     grid-template-columns: repeat(5, minmax(0, 1fr));

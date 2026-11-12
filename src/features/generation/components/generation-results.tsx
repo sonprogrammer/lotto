@@ -2,6 +2,14 @@ import type { GenerationResult } from "../hooks/use-generate-combinations";
 
 type Props = { result: GenerationResult };
 
+function getNumberTone(number: number) {
+  if (number <= 10) return "gold";
+  if (number <= 20) return "blue";
+  if (number <= 30) return "red";
+  if (number <= 40) return "gray";
+  return "green";
+}
+
 function constraintLabels(result: GenerationResult) {
   const constraints = result.appliedConstraints;
   const labels: string[] = [];
@@ -65,7 +73,10 @@ export function GenerationResults({ result }: Props) {
               aria-label={`${index + 1}번 조합: ${numbers.join(", ")}`}
             >
               {numbers.map((number) => (
-                <span className="generation-number" key={number}>
+                <span
+                  className={`generation-number lotto-ball-${getNumberTone(number)}`}
+                  key={number}
+                >
                   {number}
                 </span>
               ))}
