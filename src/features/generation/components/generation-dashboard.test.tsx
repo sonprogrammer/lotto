@@ -68,6 +68,11 @@ it("submits the default five combinations for the recent 30 draws", async () => 
 it("allows zero through six fixed numbers and limits six to one combination", async () => {
   renderDashboard();
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  expect(
+    screen.getByText(
+      "번호나 의견을 추가하지 않아도 조합 생성하기를 눌러 만들 수 있어요.",
+    ),
+  ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "조합 생성하기" })).toBeEnabled();
   for (const number of [1, 2, 3, 4, 5, 6]) {
     await userEvent.click(
@@ -100,7 +105,9 @@ it("prevents selecting more than six fixed numbers and allows deselection", asyn
     "lotto-ball-green",
   );
   expect(
-    screen.getByText(/의견을 남기지 않으면 기본 분석 프롬프트를 사용/),
+    screen.getByText(
+      /입력하신 의견은 통계와 함께 고려해요\. 의견이 없으면 기본 프롬프트로 AI가 추천해요\./,
+    ),
   ).toBeInTheDocument();
   for (const number of [1, 2, 3, 4, 5, 6]) {
     await userEvent.click(

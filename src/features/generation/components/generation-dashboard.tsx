@@ -149,8 +149,8 @@ export function GenerationDashboard({ displayName }: Props) {
               rows={3}
             />
             <p className="generation-helper">
-              남겨주신 의견 중 반영할 수 있는 내용을 함께 고려합니다. 의견을
-              남기지 않으면 기본 분석 프롬프트를 사용해요. {prompt.length}/500자
+              입력하신 의견은 통계와 함께 고려해요. 의견이 없으면 기본
+              프롬프트로 AI가 추천해요. {prompt.length}/500자
             </p>
           </div>
           <button
@@ -189,7 +189,7 @@ export function GenerationDashboard({ displayName }: Props) {
           <GenerationResults result={generation.data} />
         ) : (
           <p className="generation-feedback">
-            조건을 고르고 조합 생성하기를 눌러 주세요.
+            번호나 의견을 추가하지 않아도 조합 생성하기를 눌러 만들 수 있어요.
           </p>
         )}
       </div>
