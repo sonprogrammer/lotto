@@ -24,6 +24,9 @@ export function SiteHeader({
       </Link>
       {isSignedIn && (
         <nav className="site-navigation" aria-label="주요 메뉴">
+          <Link className="analysis-link" href="/generate">
+            번호 생성
+          </Link>
           <Link className="analysis-link" href="/analysis">
             이번 주 분석
           </Link>
