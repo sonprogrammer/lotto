@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateWeeklyAnalysis } from "@/features/analysis/lib/calculate-weekly-analysis";
+import { calculateWeeklyAnalysis } from "@/features/analysis";
 import { generateCombinations } from "./generate-combinations";
 
 const analysis = calculateWeeklyAnalysis([
@@ -41,6 +41,36 @@ describe("generateCombinations", () => {
     expect(generateCombinations({ ...input, seed: "first" })).not.toEqual(
       generateCombinations({ ...input, seed: "second" }),
     );
+  });
+
+  it("varies constrained batches across seeds while preserving ranked unique valid results", () => {
+    const input = {
+      analysis,
+      fixedNumbers: [1, 2, 3, 4, 5],
+      count: 5,
+      constraints: { excludedNumbers: [45], maxNumber: 40 },
+    };
+    const batches = ["first", "second", "third"].map((seed) => {
+      const batch = generateCombinations({ ...input, seed });
+      expect(batch).toEqual(generateCombinations({ ...input, seed }));
+      expect(batch).toHaveLength(5);
+      expect(new Set(batch.map(({ numbers }) => numbers.join(","))).size).toBe(
+        5,
+      );
+      expect(batch.map(({ score }) => score)).toEqual(
+        batch.map(({ score }) => score).sort((a, b) => b - a),
+      );
+      for (const { numbers } of batch) {
+        expect(numbers.slice(0, 5)).toEqual([1, 2, 3, 4, 5]);
+        expect(numbers).toHaveLength(6);
+        expect(numbers[5]).toBeGreaterThan(5);
+        expect(numbers[5]).toBeLessThanOrEqual(40);
+      }
+      return batch;
+    });
+    expect(batches[0]).not.toEqual(batches[1]);
+    expect(batches[1]).not.toEqual(batches[2]);
+    expect(batches[0]).not.toEqual(batches[2]);
   });
 
   it("applies number and parity constraints", () => {

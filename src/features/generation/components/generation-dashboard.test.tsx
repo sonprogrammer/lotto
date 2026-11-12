@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { GenerationDashboard } from "./generation-dashboard";
@@ -33,10 +33,116 @@ const result = {
   appliedConstraints: { fixedNumbers: [] },
   unsupportedConditions: ["다음 회차 확정"],
   explanation: "과거 출현 빈도를 참고했습니다. 당첨 결과는 예측할 수 없어요.",
+  statisticsSummary: {
+    mostFrequentNumbers: [{ number: 9, count: 8 }],
+    longestCurrentAbsences: [{ number: 45, drawsSinceLastAppearance: 12 }],
+  },
   seed: "sample-seed",
 };
 
 beforeEach(() => fetchMock.mockReset());
+
+it("keeps all controls locked until the pending generation settles", async () => {
+  let resolveRequest!: (response: Response) => void;
+  fetchMock.mockReturnValueOnce(
+    new Promise<Response>((resolve) => {
+      resolveRequest = resolve;
+    }),
+  );
+  renderDashboard();
+  const count = screen.getByRole("combobox", { name: "생성 개수" });
+  const period = screen.getByRole("combobox", { name: "분석 기간" });
+  const prompt = screen.getByRole("textbox", { name: /생성에 참고할 의견/ });
+  await userEvent.selectOptions(period, "custom");
+  const custom = screen.getByRole("spinbutton", { name: "직접 입력 회차" });
+  await userEvent.type(custom, "12");
+  await userEvent.type(prompt, "홀수 3개");
+  await userEvent.click(screen.getByRole("button", { name: "1번 고정" }));
+  await userEvent.click(screen.getByRole("button", { name: "조합 생성하기" }));
+
+  for (const number of Array.from({ length: 45 }, (_, index) => index + 1)) {
+    expect(
+      screen.getByRole("button", { name: `${number}번 고정` }),
+    ).toBeDisabled();
+  }
+  for (const control of [count, period, custom, prompt])
+    expect(control).toBeDisabled();
+  await userEvent.click(screen.getByRole("button", { name: "1번 고정" }));
+  await userEvent.selectOptions(count, "1");
+  await userEvent.selectOptions(period, "all");
+  await userEvent.type(custom, "3");
+  await userEvent.type(prompt, "추가 의견");
+  // Even a directly dispatched change must not reset a request in flight.
+  fireEvent.change(count, { target: { value: "1" } });
+  fireEvent.change(period, { target: { value: "all" } });
+  fireEvent.change(custom, { target: { value: "3" } });
+  fireEvent.change(prompt, { target: { value: "추가 의견" } });
+  expect(count).toHaveValue("5");
+  expect(period).toHaveValue("custom");
+  expect(custom).toHaveValue(12);
+  expect(prompt).toHaveValue("홀수 3개");
+  expect(screen.getByRole("button", { name: "1번 고정" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.getByRole("status")).toHaveAttribute("aria-busy", "true");
+  await userEvent.click(screen.getByRole("button", { name: "생성 중" }));
+  fireEvent.submit(count.closest("form")!);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+
+  resolveRequest(new Response(JSON.stringify(result), { status: 200 }));
+  await screen.findByRole("region", { name: "생성 결과" });
+  for (const control of [count, period, custom, prompt])
+    expect(control).toBeEnabled();
+  expect(screen.getByRole("button", { name: "조합 생성하기" })).toBeEnabled();
+});
+
+it("renders deterministic frequency and absence statistics separately from AI prose", async () => {
+  fetchMock.mockResolvedValue(
+    new Response(JSON.stringify(result), { status: 200 }),
+  );
+  renderDashboard();
+  await userEvent.click(screen.getByRole("button", { name: "조합 생성하기" }));
+  const statistics = await screen.findByRole("region", {
+    name: "분석 통계 요약",
+  });
+  expect(within(statistics).getByText("9번 · 8회 출현")).toBeInTheDocument();
+  expect(
+    within(statistics).getByText("45번 · 12회째 미출현"),
+  ).toBeInTheDocument();
+  expect(
+    within(statistics).queryByText(result.explanation),
+  ).not.toBeInTheDocument();
+  expect(screen.getAllByText(result.explanation)).toHaveLength(1);
+});
+
+it("distinguishes empty statistics from an analysis failure", async () => {
+  fetchMock.mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        ...result,
+        statisticsSummary: {
+          mostFrequentNumbers: [],
+          longestCurrentAbsences: [],
+        },
+      }),
+      { status: 200 },
+    ),
+  );
+  renderDashboard();
+  await userEvent.click(screen.getByRole("button", { name: "조합 생성하기" }));
+  const statistics = await screen.findByRole("region", {
+    name: "분석 통계 요약",
+  });
+  expect(
+    within(statistics).getByText("선택 기간에 출현한 번호가 없어요."),
+  ).toBeInTheDocument();
+  expect(
+    within(statistics).getByText(
+      "선택 기간에 미출현 회차를 계산할 번호가 없어요.",
+    ),
+  ).toBeInTheDocument();
+});
 
 it("submits the default five combinations for the recent 30 draws", async () => {
   fetchMock.mockResolvedValue(

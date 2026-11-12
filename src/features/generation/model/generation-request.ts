@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AnalysisPeriodSchema } from "@/features/analysis/model/analysis-period";
+import { AnalysisPeriodSchema } from "@/features/analysis";
 
 const LotteryNumberSchema = z.number().int().min(1).max(45);
 

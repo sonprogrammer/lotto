@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { WeeklyAnalysis } from "@/features/analysis/lib/calculate-weekly-analysis";
+import type { WeeklyAnalysis } from "@/features/analysis";
 
 const LotteryNumberSchema = z.number().int().min(1).max(45);
 
@@ -199,13 +199,22 @@ export function generateCombinations({
       "Impossible generation constraints: insufficient unique combinations",
     );
   }
-  return [...candidates.values()]
-    .sort(
-      (left, right) =>
-        right.score - left.score ||
-        left.numbers.join(",").localeCompare(right.numbers.join(",")),
-    )
-    .slice(0, count);
+  const compareCandidates = (
+    left: GeneratedCombination,
+    right: GeneratedCombination,
+  ) =>
+    right.score - left.score ||
+    left.numbers.join(",").localeCompare(right.numbers.join(","));
+  const rankedWindow = [...candidates.values()]
+    .sort(compareCandidates)
+    .slice(0, Math.min(count * 3, candidates.size));
+  const sampled: GeneratedCombination[] = [];
+  while (sampled.length < count) {
+    const index = Math.floor(random() * rankedWindow.length);
+    sampled.push(rankedWindow[index]);
+    rankedWindow.splice(index, 1);
+  }
+  return sampled.sort(compareCandidates);
 }
 
 function matchesConstraints(

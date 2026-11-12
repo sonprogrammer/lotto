@@ -1,9 +1,10 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import type { AnalysisPeriodSummary } from "@/features/analysis/model/analysis-period";
+import type { AnalysisPeriodSummary } from "@/features/analysis";
 import type { GeneratedCombination } from "../lib/generate-combinations";
 import type { GenerationRequest } from "../model/generation-request";
+import type { GenerationStatisticsSummary } from "../model/generation-statistics-summary";
 
 export type GenerationResult = {
   combinations: GeneratedCombination[];
@@ -20,6 +21,7 @@ export type GenerationResult = {
   };
   unsupportedConditions: string[];
   explanation: string;
+  statisticsSummary: GenerationStatisticsSummary;
   seed: string;
 };
 

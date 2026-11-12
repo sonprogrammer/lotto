@@ -6,12 +6,13 @@ import {
 import {
   getCachedWeeklyAnalysis,
   WEEKLY_ANALYSIS_CACHE_TAG,
-} from "@/features/analysis/server/get-cached-weekly-analysis";
+} from "@/features/analysis";
 import {
   generateCombinations,
   type GenerationConstraints,
 } from "../lib/generate-combinations";
 import type { GenerationRequest } from "../model/generation-request";
+import { summarizeGenerationAnalysis } from "../lib/summarize-generation-analysis";
 import { getGroqRecommendation } from "./groq-recommendation";
 
 export class GenerationInputError extends Error {}
@@ -89,6 +90,7 @@ export async function runGeneration(request: GenerationRequest) {
     appliedConstraints: { fixedNumbers: request.fixedNumbers, ...constraints },
     unsupportedConditions: recommendation.unsupportedConditions,
     explanation: recommendation.explanation,
+    statisticsSummary: summarizeGenerationAnalysis(analysis),
     seed,
   };
 }

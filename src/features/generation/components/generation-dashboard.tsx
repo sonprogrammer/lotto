@@ -65,7 +65,9 @@ export function GenerationDashboard({ displayName }: Props) {
                     aria-pressed={fixedNumbers.includes(number)}
                     className={`generation-ball lotto-ball-${getNumberTone(number)}`}
                     disabled={
-                      !fixedNumbers.includes(number) && fixedNumbers.length >= 6
+                      generation.isPending ||
+                      (!fixedNumbers.includes(number) &&
+                        fixedNumbers.length >= 6)
                     }
                     onClick={() => toggleNumber(number)}
                   >
@@ -80,6 +82,7 @@ export function GenerationDashboard({ displayName }: Props) {
               <label htmlFor="generation-count">생성 개수</label>
               <select
                 id="generation-count"
+                disabled={generation.isPending}
                 value={count}
                 onChange={(event) => changeCount(Number(event.target.value))}
               >
@@ -101,6 +104,7 @@ export function GenerationDashboard({ displayName }: Props) {
               <label htmlFor="generation-period">분석 기간</label>
               <select
                 id="generation-period"
+                disabled={generation.isPending}
                 value={periodChoice}
                 onChange={(event) => changePeriodChoice(event.target.value)}
               >
@@ -119,6 +123,7 @@ export function GenerationDashboard({ displayName }: Props) {
                   </label>
                   <input
                     id="generation-custom-period"
+                    disabled={generation.isPending}
                     type="number"
                     min="1"
                     step="1"
@@ -142,6 +147,7 @@ export function GenerationDashboard({ displayName }: Props) {
             </label>
             <textarea
               id="generation-prompt"
+              disabled={generation.isPending}
               maxLength={500}
               value={prompt}
               onChange={(event) => changePrompt(event.target.value)}

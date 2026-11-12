@@ -231,6 +231,18 @@
   font-size: 13px;
   line-height: 1.7;
 }
+.generation-statistics h4 {
+  margin: 14px 0 5px;
+  color: #354a64;
+  font-size: 13px;
+}
+.generation-statistics ol {
+  margin: 8px 0 0;
+  padding-left: 22px;
+  color: #6d7d92;
+  font-size: 13px;
+  line-height: 1.7;
+}
 .generation-disclaimer {
   margin: 20px 0 0;
 }

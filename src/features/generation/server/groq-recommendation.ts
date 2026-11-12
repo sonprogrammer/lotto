@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { WeeklyAnalysis } from "@/features/analysis/lib/calculate-weekly-analysis";
+import type { WeeklyAnalysis } from "@/features/analysis";
 import {
   GenerationConstraintsSchema,
   type GenerationConstraints,

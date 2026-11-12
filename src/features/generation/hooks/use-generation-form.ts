@@ -19,6 +19,7 @@ export function useGenerationForm() {
     (periodChoice !== "custom" || customPeriodValid);
 
   function toggleNumber(number: number) {
+    if (generation.isPending) return;
     setFixedNumbers((current) =>
       current.includes(number)
         ? current.filter((item) => item !== number)
@@ -30,18 +31,22 @@ export function useGenerationForm() {
   }
 
   function changeCount(value: number) {
+    if (generation.isPending) return;
     setCount(value);
     generation.reset();
   }
   function changePeriodChoice(value: string) {
+    if (generation.isPending) return;
     setPeriodChoice(value);
     generation.reset();
   }
   function changeCustomCount(value: string) {
+    if (generation.isPending) return;
     setCustomCount(value);
     generation.reset();
   }
   function changePrompt(value: string) {
+    if (generation.isPending) return;
     setPrompt(value);
     generation.reset();
   }

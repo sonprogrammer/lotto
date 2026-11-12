@@ -1,4 +1,5 @@
 import type { GenerationResult } from "../hooks/use-generate-combinations";
+import { GenerationStatistics } from "./generation-statistics";
 
 type Props = { result: GenerationResult };
 
@@ -85,6 +86,7 @@ export function GenerationResults({ result }: Props) {
         ))}
       </ol>
       <div className="generation-result-details">
+        <GenerationStatistics summary={result.statisticsSummary} />
         <div>
           <h3>적용된 조건</h3>
           <p>{constraintLabels(result).join(" · ")}</p>

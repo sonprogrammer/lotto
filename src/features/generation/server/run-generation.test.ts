@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { calculateWeeklyAnalysis } from "@/features/analysis/lib/calculate-weekly-analysis";
+import { calculateWeeklyAnalysis } from "@/features/analysis";
 import { runGeneration, GenerationInputError } from "./run-generation";
 import { GroqProviderError } from "./groq-recommendation";
 
@@ -19,7 +19,8 @@ vi.mock("@/entities/lottery-draw", () => ({
   syncLotteryDraws: syncLotteryDrawsMock,
   LOTTERY_DRAW_HISTORY_CACHE_TAG: "lottery-draw-history",
 }));
-vi.mock("@/features/analysis/server/get-cached-weekly-analysis", () => ({
+vi.mock("@/features/analysis", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/analysis")>()),
   getCachedWeeklyAnalysis: getCachedWeeklyAnalysisMock,
   WEEKLY_ANALYSIS_CACHE_TAG: "weekly-analysis",
 }));
@@ -80,6 +81,16 @@ it("accepts no fixed numbers and applies one recommendation to multiple combinat
     explanation: "집계 통계를 참고했습니다.",
     appliedConstraints: { fixedNumbers: [], excludedNumbers: [44] },
     unsupportedConditions: ["지원하지 않는 조건"],
+    statisticsSummary: {
+      mostFrequentNumbers: [1, 2, 3, 11, 23].map((number) => ({
+        number,
+        count: 1,
+      })),
+      longestCurrentAbsences: [1, 2, 3, 11, 23].map((number) => ({
+        number,
+        drawsSinceLastAppearance: 0,
+      })),
+    },
   });
   expect(result.combinations).toHaveLength(3);
   for (const combination of result.combinations) {
