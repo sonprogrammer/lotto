@@ -39,17 +39,12 @@ export async function runGeneration(request: GenerationRequest) {
     request.period,
   );
 
-  // A custom prompt applies in any mode; otherwise only AI-assisted uses AI constraints.
   const customPrompt = request.prompt?.trim();
-  const useAiConstraints =
-    request.method === "ai-assisted" || Boolean(customPrompt);
   let recommendation;
   try {
     recommendation = await getGroqRecommendation({
-      prompt:
-        customPrompt ||
-        (request.method === "ai-assisted" ? DEFAULT_AI_PROMPT : undefined),
-      fixedNumbers: useAiConstraints ? request.fixedNumbers : [],
+      prompt: customPrompt || DEFAULT_AI_PROMPT,
+      fixedNumbers: request.fixedNumbers,
       analysisSummary: analysis,
     });
   } catch (error) {
@@ -62,9 +57,7 @@ export async function runGeneration(request: GenerationRequest) {
     throw error;
   }
 
-  const constraints: GenerationConstraints = useAiConstraints
-    ? recommendation.constraints
-    : {};
+  const constraints: GenerationConstraints = recommendation.constraints;
   let combinations;
   const seed = crypto.randomUUID();
   try {
@@ -94,9 +87,7 @@ export async function runGeneration(request: GenerationRequest) {
     latestRound: syncResult.latestRound,
     period,
     appliedConstraints: { fixedNumbers: request.fixedNumbers, ...constraints },
-    unsupportedConditions: useAiConstraints
-      ? recommendation.unsupportedConditions
-      : [],
+    unsupportedConditions: recommendation.unsupportedConditions,
     explanation: recommendation.explanation,
     seed,
   };

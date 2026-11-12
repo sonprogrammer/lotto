@@ -41,18 +41,18 @@ beforeEach(() => {
 
 it("requires login before reading the request or generating combinations", async () => {
   getCurrentUserMock.mockResolvedValue(null);
-  const response = await POST(request({ method: "automatic" }));
+  const response = await POST(request({}));
   expect(response.status).toBe(401);
   expect(runGenerationMock).not.toHaveBeenCalled();
 });
 
 it("rejects invalid requests before generation", async () => {
-  const response = await POST(request({ method: "automatic", count: 11 }));
+  const response = await POST(request({ count: 11 }));
   expect(response.status).toBe(400);
   expect(runGenerationMock).not.toHaveBeenCalled();
 });
 
-it("returns the generation result without passing user identity to generation", async () => {
+it("accepts no selected numbers and returns the result without passing user identity", async () => {
   const result = {
     combinations: [{ numbers: [1, 2, 3, 4, 5, 6], score: 1 }],
     latestRound: 1249,
@@ -69,11 +69,10 @@ it("returns the generation result without passing user identity to generation", 
     seed: "seed",
   };
   runGenerationMock.mockResolvedValue(result);
-  const response = await POST(request({ method: "automatic" }));
+  const response = await POST(request({ fixedNumbers: [] }));
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual(result);
   expect(runGenerationMock).toHaveBeenCalledWith({
-    method: "automatic",
     fixedNumbers: [],
     count: 5,
     period: { type: "recent", count: 30 },
@@ -82,14 +81,14 @@ it("returns the generation result without passing user identity to generation", 
 
 it("returns unsatisfiable conditions as a bad request", async () => {
   runGenerationMock.mockRejectedValue(new GenerationInputError("조건 충돌"));
-  const response = await POST(request({ method: "automatic" }));
+  const response = await POST(request({}));
   expect(response.status).toBe(400);
   expect(await response.json()).toEqual({ error: "조건 충돌" });
 });
 
 it("returns retryable upstream failures", async () => {
   runGenerationMock.mockRejectedValue(new Error("provider or AI failed"));
-  const response = await POST(request({ method: "automatic" }));
+  const response = await POST(request({}));
   expect(response.status).toBe(502);
   expect(await response.json()).toEqual({
     error: "생성 자료를 가져오지 못했어요. 다시 시도해 주세요.",
@@ -107,8 +106,23 @@ it.each([
     runGenerationMock.mockRejectedValue(
       new GroqProviderError(kind, "internal detail"),
     );
-    const response = await POST(request({ method: "automatic" }));
+    const response = await POST(request({}));
     expect(response.status).toBe(status);
     expect(await response.json()).toEqual({ error: message, retryable: true });
+  },
+);
+
+it.each([
+  { fixedNumbers: [0] },
+  { fixedNumbers: [46] },
+  { fixedNumbers: [1.5] },
+  { fixedNumbers: [1, 1] },
+  { fixedNumbers: [1, 2, 3, 4, 5, 6, 7] },
+])(
+  "rejects invalid selected numbers $fixedNumbers before generation",
+  async ({ fixedNumbers }) => {
+    const response = await POST(request({ fixedNumbers }));
+    expect(response.status).toBe(400);
+    expect(runGenerationMock).not.toHaveBeenCalled();
   },
 );
