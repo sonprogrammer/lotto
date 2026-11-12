@@ -34,6 +34,16 @@ export const GenerationRequestSchema = z
         message: "Selected generation requires fixed numbers",
       });
     }
+    if (
+      request.method === "ai-assisted" &&
+      (fixedNumbers.length < 1 || fixedNumbers.length > 5)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["fixedNumbers"],
+        message: "AI-assisted generation requires one to five fixed numbers",
+      });
+    }
     if (fixedNumbers.length === 6 && request.count !== 1) {
       context.addIssue({
         code: "custom",

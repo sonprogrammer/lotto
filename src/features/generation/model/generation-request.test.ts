@@ -69,6 +69,25 @@ describe("GenerationRequestSchema", () => {
     ).toBe(true);
   });
 
+  it("requires one to five fixed numbers for AI-assisted generation", () => {
+    expect(
+      GenerationRequestSchema.safeParse({ method: "ai-assisted" }).success,
+    ).toBe(false);
+    expect(
+      GenerationRequestSchema.safeParse({
+        method: "ai-assisted",
+        fixedNumbers: [1, 2, 3, 4, 5, 6],
+        count: 1,
+      }).success,
+    ).toBe(false);
+    expect(
+      GenerationRequestSchema.safeParse({
+        method: "ai-assisted",
+        fixedNumbers: [1, 2, 3, 4, 5],
+      }).success,
+    ).toBe(true);
+  });
+
   it.each([0, 11, 1.5])("rejects count %s", (count) => {
     expect(
       GenerationRequestSchema.safeParse({
