@@ -4,12 +4,15 @@ const KAKAO_AUTH_URL = "https://kauth.kakao.com/oauth/authorize";
 const KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
 const KAKAO_USER_URL = "https://kapi.kakao.com/v2/user/me";
 
-export function createKakaoAuthorizationUrl(state: string): string {
+export function createKakaoAuthorizationUrl(
+  state: string,
+  redirectUri: string,
+): string {
   const config = getKakaoConfig();
   const url = new URL(KAKAO_AUTH_URL);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", config.restApiKey);
-  url.searchParams.set("redirect_uri", config.redirectUri);
+  url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("scope", "profile_nickname");
   url.searchParams.set("state", state);
   return url.toString();
@@ -17,12 +20,13 @@ export function createKakaoAuthorizationUrl(state: string): string {
 
 export async function getKakaoUserProfile(
   code: string,
+  redirectUri: string,
 ): Promise<{ kakaoId: string; nickname: string }> {
   const config = getKakaoConfig();
   const tokenBody = new URLSearchParams({
     grant_type: "authorization_code",
     client_id: config.restApiKey,
-    redirect_uri: config.redirectUri,
+    redirect_uri: redirectUri,
     code,
     client_secret: config.clientSecret,
   });

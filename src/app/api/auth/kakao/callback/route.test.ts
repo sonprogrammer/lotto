@@ -26,6 +26,8 @@ afterEach(() => vi.unstubAllEnvs());
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv("VERCEL_ENV", "preview");
+  vi.stubEnv("VERCEL_BRANCH_URL", "lotto.example");
   mocks.isOAuthStateValid.mockReturnValue(true);
   mocks.getKakaoUserProfile.mockResolvedValue({
     kakaoId: "kakao-user-id",
@@ -35,29 +37,30 @@ beforeEach(() => {
   mocks.createAppSession.mockResolvedValue("session-secret");
 });
 
-function request(query: string, cookies = "lotto_oauth_state=state-value") {
-  return new NextRequest(
-    `https://lotto.example/api/auth/kakao/callback?${query}`,
-    {
-      headers: { cookie: cookies },
-    },
-  );
+function request(
+  query: string,
+  cookies = "lotto_oauth_state=state-value",
+  origin = "https://lotto.example",
+) {
+  return new NextRequest(`${origin}/api/auth/kakao/callback?${query}`, {
+    headers: { cookie: cookies },
+  });
 }
 
 describe("Kakao callback", () => {
   it("validates state before contacting Kakao, then sets the app session cookie", async () => {
     vi.stubEnv("KAKAO_REST_API_KEY", "rest-key");
     vi.stubEnv("KAKAO_CLIENT_SECRET", "client-secret");
-    vi.stubEnv(
-      "KAKAO_REDIRECT_URI",
-      "https://lotto.example/api/auth/kakao/callback",
-    );
+    vi.stubEnv("KAKAO_REDIRECT_URI", "/api/auth/kakao/callback");
     const response = await GET(request("code=auth-code&state=state-value"));
     expect(mocks.isOAuthStateValid).toHaveBeenCalledWith(
       "state-value",
       "state-value",
     );
-    expect(mocks.getKakaoUserProfile).toHaveBeenCalledWith("auth-code");
+    expect(mocks.getKakaoUserProfile).toHaveBeenCalledWith(
+      "auth-code",
+      "https://lotto.example/api/auth/kakao/callback",
+    );
     expect(mocks.findOrCreateKakaoUser).toHaveBeenCalledWith(
       "kakao-user-id",
       "손영진",
@@ -73,21 +76,45 @@ describe("Kakao callback", () => {
     expect(cookies).toContain("lotto_oauth_state=;");
   });
 
-  it("redirects to the configured site origin instead of a supplied Host", async () => {
+  it("redirects a callback to the stable branch URL", async () => {
     vi.stubEnv("KAKAO_REST_API_KEY", "rest-key");
     vi.stubEnv("KAKAO_CLIENT_SECRET", "client-secret");
-    vi.stubEnv(
-      "KAKAO_REDIRECT_URI",
-      "https://lotto.example/api/auth/kakao/callback",
-    );
+    vi.stubEnv("KAKAO_REDIRECT_URI", "/api/auth/kakao/callback");
     const response = await GET(
       new NextRequest(
-        "https://attacker.example/api/auth/kakao/callback?code=auth-code&state=state-value",
+        "https://deployment-123.vercel.app/api/auth/kakao/callback?code=auth-code&state=state-value",
         { headers: { cookie: "lotto_oauth_state=state-value" } },
       ),
     );
 
-    expect(response.headers.get("location")).toBe("https://lotto.example/");
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://lotto.example/api/auth/kakao/callback?code=auth-code&state=state-value",
+    );
+  });
+
+  it("uses the production domain for token exchange and post-login redirect", async () => {
+    vi.stubEnv("KAKAO_REST_API_KEY", "rest-key");
+    vi.stubEnv("KAKAO_CLIENT_SECRET", "client-secret");
+    vi.stubEnv("KAKAO_REDIRECT_URI", "/api/auth/kakao/callback");
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "lotto-amber.vercel.app");
+
+    const response = await GET(
+      request(
+        "code=auth-code&state=state-value",
+        "lotto_oauth_state=state-value",
+        "https://lotto-amber.vercel.app",
+      ),
+    );
+
+    expect(mocks.getKakaoUserProfile).toHaveBeenCalledWith(
+      "auth-code",
+      "https://lotto-amber.vercel.app/api/auth/kakao/callback",
+    );
+    expect(response.headers.get("location")).toBe(
+      "https://lotto-amber.vercel.app/",
+    );
   });
 
   it.each([
@@ -115,10 +142,7 @@ describe("Kakao callback", () => {
   it("stores the agreed Kakao nickname with the account", async () => {
     vi.stubEnv("KAKAO_REST_API_KEY", "rest-key");
     vi.stubEnv("KAKAO_CLIENT_SECRET", "client-secret");
-    vi.stubEnv(
-      "KAKAO_REDIRECT_URI",
-      "https://lotto.example/api/auth/kakao/callback",
-    );
+    vi.stubEnv("KAKAO_REDIRECT_URI", "/api/auth/kakao/callback");
     await GET(request("code=auth-code&state=state-value"));
 
     expect(mocks.findOrCreateKakaoUser).toHaveBeenCalledWith(

@@ -12,23 +12,21 @@ afterEach(() => {
 function configureKakao() {
   vi.stubEnv("KAKAO_REST_API_KEY", "rest-key");
   vi.stubEnv("KAKAO_CLIENT_SECRET", "client-secret");
-  vi.stubEnv(
-    "KAKAO_REDIRECT_URI",
-    "https://lotto.example/api/auth/kakao/callback",
-  );
+  vi.stubEnv("KAKAO_REDIRECT_URI", "/api/auth/kakao/callback");
 }
 
 describe("Kakao OAuth", () => {
   it("requests only the required Kakao nickname scope", () => {
     configureKakao();
-    const url = new URL(createKakaoAuthorizationUrl("random-state"));
+    const redirectUri = "https://lotto-preview.example/api/auth/kakao/callback";
+    const url = new URL(
+      createKakaoAuthorizationUrl("random-state", redirectUri),
+    );
     expect(url.origin + url.pathname).toBe(
       "https://kauth.kakao.com/oauth/authorize",
     );
     expect(url.searchParams.get("client_id")).toBe("rest-key");
-    expect(url.searchParams.get("redirect_uri")).toBe(
-      "https://lotto.example/api/auth/kakao/callback",
-    );
+    expect(url.searchParams.get("redirect_uri")).toBe(redirectUri);
     expect(url.searchParams.get("state")).toBe("random-state");
     expect(url.searchParams.get("scope")).toBe("profile_nickname");
   });
@@ -57,7 +55,8 @@ describe("Kakao OAuth", () => {
       );
     vi.stubGlobal("fetch", fetchMock);
 
-    expect(await getKakaoUserProfile("auth-code")).toEqual({
+    const redirectUri = "https://lotto-preview.example/api/auth/kakao/callback";
+    expect(await getKakaoUserProfile("auth-code", redirectUri)).toEqual({
       kakaoId: "123456",
       nickname: "손영진",
     });
@@ -65,6 +64,10 @@ describe("Kakao OAuth", () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain(
       "https://kauth.kakao.com/oauth/token",
     );
+    const tokenRequestBody = fetchMock.mock.calls[0][1]
+      ?.body as URLSearchParams;
+    expect(tokenRequestBody).toBeInstanceOf(URLSearchParams);
+    expect(tokenRequestBody.get("redirect_uri")).toBe(redirectUri);
     expect(String(fetchMock.mock.calls[1][0])).toContain(
       "https://kapi.kakao.com/v2/user/me",
     );
@@ -82,7 +85,12 @@ describe("Kakao OAuth", () => {
       "fetch",
       vi.fn().mockResolvedValue(new Response("{}", { status: 401 })),
     );
-    await expect(getKakaoUserProfile("bad-code")).rejects.toThrow();
+    await expect(
+      getKakaoUserProfile(
+        "bad-code",
+        "https://lotto-preview.example/api/auth/kakao/callback",
+      ),
+    ).rejects.toThrow();
   });
 
   it("rejects a Kakao response without the required nickname", async () => {
@@ -99,8 +107,11 @@ describe("Kakao OAuth", () => {
       );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(getKakaoUserProfile("auth-code")).rejects.toThrow(
-      "Kakao user response is invalid",
-    );
+    await expect(
+      getKakaoUserProfile(
+        "auth-code",
+        "https://lotto-preview.example/api/auth/kakao/callback",
+      ),
+    ).rejects.toThrow("Kakao user response is invalid");
   });
 });

@@ -80,7 +80,7 @@ src/
 - 브라우저에는 원래 세션 값을 `HttpOnly` 쿠키로 전달합니다. 운영 환경에서는 `Secure`, `SameSite=Lax`를 적용합니다. 브라우저 스크립트는 세션 쿠키를 읽을 수 없습니다.
 - 요청을 받을 때 서버는 쿠키의 세션 값을 해시해 MongoDB 세션과 대조합니다. 로그아웃하면 해당 세션을 삭제해 즉시 종료합니다.
 
-자체 세션은 로그인 후 30일이 지나면 만료되고 자동 연장하지 않습니다. 로그아웃하면 현재 기기의 세션을 즉시 삭제합니다. 모든 기기 로그아웃 기능은 아직 정하지 않았습니다. 운영 Kakao Redirect URI는 `https://lotto-amber.vercel.app/api/auth/kakao/callback`입니다. 카카오 사용자 정보에서 고유 ID와 필수 동의된 프로필 닉네임만 저장·표시합니다. 프로필 사진과 이메일은 저장하거나 표시하지 않습니다.
+자체 세션은 로그인 후 30일이 지나면 만료되고 자동 연장하지 않습니다. 로그아웃하면 현재 기기의 세션을 즉시 삭제합니다. 모든 기기 로그아웃 기능은 아직 정하지 않았습니다. Kakao Redirect URI 경로는 `/api/auth/kakao/callback`으로 고정하고 현재 배포의 정식 origin을 서버에서 붙입니다. Vercel Preview는 `VERCEL_BRANCH_URL`, Production은 `VERCEL_PROJECT_PRODUCTION_URL`을 사용해 브랜치 프리뷰와 운영 주소를 구분합니다. 이 시스템 변수를 사용할 수 있도록 Vercel 프로젝트에서 System Environment Variables 접근을 켭니다. 해당 origin의 콜백 전체 주소는 Kakao Developers에 등록해야 합니다. 카카오 사용자 정보에서 고유 ID와 필수 동의된 프로필 닉네임만 저장·표시합니다. 프로필 사진과 이메일은 저장하거나 표시하지 않습니다.
 
 ## 6. 데이터 접근 원칙
 
@@ -160,7 +160,7 @@ MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `mod
 ## 10. 배포와 비밀 값
 
 - 웹앱은 Vercel에 배포하는 방안을 사용자가 검토 중입니다.
-- `MONGODB_URI`, `MONGODB_DB_NAME`, `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`, `KAKAO_REDIRECT_URI`, AI 키는 서버 환경 변수에만 저장합니다. 브라우저에 전달되는 변수 이름에 `NEXT_PUBLIC_`을 붙이지 않습니다.
+- `MONGODB_URI`, `MONGODB_DB_NAME`, `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`, `KAKAO_REDIRECT_URI`, AI 키는 서버 환경 변수에만 저장합니다. `KAKAO_REDIRECT_URI`에는 `/api/auth/kakao/callback` 경로만 넣고 배포 origin은 Vercel 시스템 변수에서 가져옵니다. 브라우저에 전달되는 변수 이름에 `NEXT_PUBLIC_`을 붙이지 않습니다.
 - 카카오 토큰과 우리 서비스 세션은 서로 다른 값이며 저장 위치와 수명도 분리합니다. 카카오 토큰은 사용자 확인 후 버리고, 우리 세션은 해시만 MongoDB에 보관합니다.
 - 개발·미리보기·운영 환경에서 서로 다른 비밀 값을 쓸지 배포 설정 단계에서 정합니다.
 - 실제 서비스 계정과 자격 증명이 설정되기 전에는 카카오 로그인 연동을 완료했다고 볼 수 없습니다.

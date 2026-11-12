@@ -31,17 +31,14 @@ describe("server auth configuration", () => {
     },
   );
 
-  it("reads server Kakao credentials and a local redirect", () => {
+  it("reads the fixed Kakao callback path", () => {
     vi.stubEnv("KAKAO_REST_API_KEY", "key");
     vi.stubEnv("KAKAO_CLIENT_SECRET", "secret");
-    vi.stubEnv(
-      "KAKAO_REDIRECT_URI",
-      "http://localhost:3000/api/auth/kakao/callback",
-    );
+    vi.stubEnv("KAKAO_REDIRECT_URI", "/api/auth/kakao/callback");
     expect(getKakaoConfig()).toEqual({
       restApiKey: "key",
       clientSecret: "secret",
-      redirectUri: "http://localhost:3000/api/auth/kakao/callback",
+      redirectUri: "/api/auth/kakao/callback",
     });
   });
 

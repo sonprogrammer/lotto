@@ -5,7 +5,7 @@ export { getMongoConfig } from "@/shared/server/mongodb/config";
 const kakaoConfigSchema = z.object({
   restApiKey: z.string().trim().min(1),
   clientSecret: z.string().trim().min(1),
-  redirectUri: z.url({ protocol: /^https?$/ }),
+  redirectUri: z.literal("/api/auth/kakao/callback"),
 });
 
 export function getKakaoConfig(): {
