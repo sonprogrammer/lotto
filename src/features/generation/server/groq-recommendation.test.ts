@@ -125,4 +125,77 @@ describe("getGroqRecommendation", () => {
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it.each([
+    {
+      name: "excluded fixed number",
+      fixedNumbers: [4],
+      constraints: { excludedNumbers: [4] },
+      reason: "제외 번호",
+    },
+    {
+      name: "fixed number below minimum",
+      fixedNumbers: [4],
+      constraints: { minNumber: 5 },
+      reason: "번호 범위",
+    },
+    {
+      name: "fixed number above maximum",
+      fixedNumbers: [40],
+      constraints: { maxNumber: 39 },
+      reason: "번호 범위",
+    },
+    {
+      name: "too many fixed odd numbers",
+      fixedNumbers: [1, 3, 5, 7, 9],
+      constraints: { oddCount: 4 },
+      reason: "홀수 개수",
+    },
+    {
+      name: "too few remaining slots for odd numbers",
+      fixedNumbers: [2, 4, 6, 8, 10],
+      constraints: { oddCount: 2 },
+      reason: "홀수 개수",
+    },
+    {
+      name: "too many fixed low numbers",
+      fixedNumbers: [2, 4, 6, 8, 10],
+      constraints: { lowCount: 4 },
+      reason: "낮은 번호 개수",
+    },
+    {
+      name: "too few remaining slots for low numbers",
+      fixedNumbers: [30, 32, 34, 36, 38],
+      constraints: { lowCount: 2 },
+      reason: "낮은 번호 개수",
+    },
+    {
+      name: "adjacent fixed numbers when consecutive numbers are disallowed",
+      fixedNumbers: [4, 5],
+      constraints: { allowConsecutive: false },
+      reason: "연속 번호",
+    },
+  ])(
+    "rejects $name before treating AI conditions as applied",
+    async ({ fixedNumbers, constraints, reason }) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          groqResponse({
+            ...recommendation,
+            constraints: {
+              ...recommendation.constraints,
+              excludedNumbers: [],
+              oddCount: null,
+              ...constraints,
+            },
+          }),
+        ),
+      );
+
+      await expect(
+        getGroqRecommendation({ ...input, fixedNumbers }),
+      ).rejects.toThrow(reason);
+    },
+  );
 });

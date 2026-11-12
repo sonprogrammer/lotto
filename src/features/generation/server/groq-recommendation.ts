@@ -84,6 +84,7 @@ export async function getGroqRecommendation({
   if (!apiKey) throw new Error("Groq API key is not configured");
 
   let response: Response;
+  let result: GroqRecommendation;
   try {
     response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -162,12 +163,69 @@ export async function getGroqRecommendation({
         allowConsecutive: rawConstraints.allowConsecutive,
       }),
     });
-    return {
+    result = {
       constraints,
       unsupportedConditions: parsed.unsupportedConditions,
       explanation: parsed.explanation,
     };
   } catch {
     throw new Error("Invalid Groq recommendation");
+  }
+
+  validateFixedNumberCompatibility(result.constraints, fixedNumbers);
+  return result;
+}
+
+function validateFixedNumberCompatibility(
+  constraints: GenerationConstraints,
+  fixedNumbers: readonly number[],
+): void {
+  if (
+    fixedNumbers.some((number) => constraints.excludedNumbers?.includes(number))
+  ) {
+    throw new Error(
+      "AI 조건과 고정 번호가 충돌합니다: 제외 번호를 확인해 주세요.",
+    );
+  }
+  if (
+    fixedNumbers.some(
+      (number) =>
+        number < (constraints.minNumber ?? 1) ||
+        number > (constraints.maxNumber ?? 45),
+    )
+  ) {
+    throw new Error(
+      "AI 조건과 고정 번호가 충돌합니다: 번호 범위를 확인해 주세요.",
+    );
+  }
+
+  const remainingSlots = 6 - fixedNumbers.length;
+  const oddFixed = fixedNumbers.filter((number) => number % 2 === 1).length;
+  if (
+    constraints.oddCount !== undefined &&
+    (oddFixed > constraints.oddCount ||
+      oddFixed + remainingSlots < constraints.oddCount)
+  ) {
+    throw new Error(
+      "AI 조건과 고정 번호가 충돌합니다: 홀수 개수를 확인해 주세요.",
+    );
+  }
+  const lowFixed = fixedNumbers.filter((number) => number <= 22).length;
+  if (
+    constraints.lowCount !== undefined &&
+    (lowFixed > constraints.lowCount ||
+      lowFixed + remainingSlots < constraints.lowCount)
+  ) {
+    throw new Error(
+      "AI 조건과 고정 번호가 충돌합니다: 낮은 번호 개수를 확인해 주세요.",
+    );
+  }
+  if (
+    constraints.allowConsecutive === false &&
+    fixedNumbers.some((number) => fixedNumbers.includes(number + 1))
+  ) {
+    throw new Error(
+      "AI 조건과 고정 번호가 충돌합니다: 연속 번호를 확인해 주세요.",
+    );
   }
 }
