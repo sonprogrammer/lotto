@@ -225,6 +225,30 @@ it("prevents selecting more than six fixed numbers and allows deselection", asyn
   expect(screen.getByRole("button", { name: "7번 고정" })).toBeEnabled();
 });
 
+it("shows selected numbers below the picker and lets each chip remove its number", async () => {
+  renderDashboard();
+  await userEvent.click(screen.getByRole("button", { name: "5번 고정" }));
+  await userEvent.click(screen.getByRole("button", { name: "12번 고정" }));
+
+  const selectedNumbers = screen.getByRole("region", { name: "선택한 번호" });
+  expect(within(selectedNumbers).getAllByRole("listitem")).toHaveLength(2);
+  const removeButton = within(selectedNumbers).getByRole("button", {
+    name: "12번 선택 취소",
+  });
+  expect(removeButton).toHaveTextContent("×");
+
+  await userEvent.click(removeButton);
+
+  expect(within(selectedNumbers).getAllByRole("listitem")).toHaveLength(1);
+  expect(
+    within(selectedNumbers).queryByRole("button", { name: "12번 선택 취소" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "12번 고정" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+});
+
 it("submits selected balls and a trimmed optional prompt in one request", async () => {
   fetchMock.mockResolvedValue(
     new Response(JSON.stringify(result), { status: 200 }),

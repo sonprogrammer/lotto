@@ -3,6 +3,7 @@
 import { SiteHeader } from "@/widgets/site-header";
 import { useGenerationForm } from "../hooks/use-generation-form";
 import { GenerationResults } from "./generation-results";
+import { SelectedNumberList } from "./selected-number-list";
 import "./generation.css";
 
 type Props = { displayName?: string };
@@ -76,6 +77,11 @@ export function GenerationDashboard({ displayName }: Props) {
                 ),
               )}
             </div>
+            <SelectedNumberList
+              numbers={fixedNumbers}
+              disabled={generation.isPending}
+              onRemove={toggleNumber}
+            />
           </fieldset>
           <div className="generation-settings">
             <div className="generation-control">
