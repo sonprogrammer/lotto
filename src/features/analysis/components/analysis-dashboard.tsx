@@ -1,7 +1,11 @@
 "use client";
 
+import { useState } from "react";
+
 import { SiteHeader } from "@/widgets/site-header";
 import { useRunWeeklyAnalysis } from "../hooks/use-run-weekly-analysis";
+import type { AnalysisPeriod } from "../model/analysis-period";
+import { AnalysisPeriodSelector } from "./analysis-period-selector";
 import { FrequencyGapHelp } from "./frequency-gap-help";
 
 type AnalysisDashboardProps = {
@@ -18,8 +22,29 @@ function getNumberTone(number: number) {
 
 export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
   const analysisRequest = useRunWeeklyAnalysis();
+  const [period, setPeriod] = useState<AnalysisPeriod>({
+    type: "recent",
+    count: 30,
+  });
+  const [customCount, setCustomCount] = useState("");
+  const [isCustomPeriod, setIsCustomPeriod] = useState(false);
+  const [knownAvailableDrawCount, setKnownAvailableDrawCount] = useState<
+    number | undefined
+  >();
   const analysisResult = analysisRequest.data;
   const analysis = analysisResult?.analysis;
+  const availableDrawCount =
+    analysisResult?.availableDrawCount ?? knownAvailableDrawCount;
+
+  function resetAnalysisAnd<T>(update: (value: T) => void) {
+    return (value: T) => {
+      if (analysisResult) {
+        setKnownAvailableDrawCount(analysisResult.availableDrawCount);
+      }
+      analysisRequest.reset();
+      update(value);
+    };
+  }
 
   return (
     <main className="analysis-shell">
@@ -33,11 +58,28 @@ export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
           분석은 참고 자료이며 당첨을 예측하거나 보장하지 않아요.
         </p>
 
+        <AnalysisPeriodSelector
+          period={period}
+          onChange={resetAnalysisAnd(setPeriod)}
+          customCount={customCount}
+          onCustomCountChange={resetAnalysisAnd(setCustomCount)}
+          isCustom={isCustomPeriod}
+          onCustomModeChange={resetAnalysisAnd(setIsCustomPeriod)}
+          availableDrawCount={availableDrawCount}
+        />
+
         <button
           className="analysis-run-button"
           type="button"
-          disabled={analysisRequest.isPending}
-          onClick={() => analysisRequest.mutate()}
+          disabled={
+            analysisRequest.isPending ||
+            (isCustomPeriod &&
+              (!/^[1-9]\d*$/.test(customCount) ||
+                !Number.isSafeInteger(Number(customCount)) ||
+                (availableDrawCount !== undefined &&
+                  Number(customCount) > availableDrawCount)))
+          }
+          onClick={() => analysisRequest.mutate(period)}
         >
           {analysisRequest.isPending
             ? "분석 중"
@@ -54,8 +96,8 @@ export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
             aria-busy="true"
           >
             <p>
-              전체 회차 자료를 확인하고 있어요. 처음 조회할 때는 잠시 걸릴 수
-              있어요.
+              선택한 기간의 회차 자료를 확인하고 있어요. 처음 조회할 때는 잠시
+              걸릴 수 있어요.
             </p>
             <div className="analysis-skeleton analysis-skeleton-meta" />
             <div className="analysis-skeleton analysis-skeleton-card" />
@@ -68,17 +110,32 @@ export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
               ))}
             </div>
           </div>
+        ) : analysisRequest.isIdle ? (
+          <p className="analysis-empty-state">
+            선택한 기간으로 분석을 실행해 결과를 확인해 주세요.
+          </p>
         ) : analysisRequest.isError ? (
           <div className="analysis-empty-state" role="alert">
             <h2>분석 자료를 가져오지 못했어요.</h2>
-            <p>연결 상태를 확인한 뒤 다시 분석해 주세요.</p>
+            <p>
+              {analysisRequest.error.message ||
+                "연결 상태를 확인한 뒤 다시 분석해 주세요."}
+            </p>
           </div>
         ) : analysis ? (
           <>
             <p className="analysis-meta">
-              전체 공개 회차 · {analysisResult?.drawCount ?? analysis.drawCount}
-              회 반영 · {analysisResult?.latestRound ?? analysis.latestRound}
-              회차 기준
+              {analysisResult?.period.type === "all"
+                ? "전체"
+                : `최근 ${analysisResult?.period.count ?? (period.type === "recent" ? period.count : analysis.drawCount)}회`}
+              {analysisResult?.period.firstRound !== null &&
+              analysisResult?.period.firstRound !== undefined
+                ? ` · ${analysisResult.period.firstRound}회부터`
+                : ""}
+              {analysisResult?.period.latestRound !== null &&
+              analysisResult?.period.latestRound !== undefined
+                ? ` ${analysisResult.period.latestRound}회까지 · ${analysisResult.period.drawCount}회 반영 · ${analysisResult.period.latestRound}회차 기준`
+                : ` · ${analysisResult?.period.drawCount ?? analysis.drawCount}회 반영`}
             </p>
             <section
               className="analysis-section"
@@ -113,7 +170,7 @@ export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
                       <strong>{count}회</strong>
                       <span className="frequency-gap">
                         {drawsSinceLastAppearance === null
-                          ? "기록 없음"
+                          ? `${analysisResult?.period.type === "all" ? "전체" : `최근 ${analysisResult?.period.count ?? analysis.drawCount}회`} 내 미출현`
                           : `${drawsSinceLastAppearance}회 미출현`}
                       </span>
                     </li>

@@ -36,5 +36,6 @@ export function useLotteryDrawHistory() {
     queryFn: ({ pageParam }) => fetchLotteryDrawHistory(pageParam),
     initialPageParam: null as number | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    staleTime: 5 * 60 * 1000,
   });
 }

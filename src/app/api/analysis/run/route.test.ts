@@ -1,77 +1,129 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-const { getCurrentUserMock, syncLotteryDrawsMock, listLotteryDrawsMock } =
-  vi.hoisted(() => ({
-    getCurrentUserMock: vi.fn(),
-    syncLotteryDrawsMock: vi.fn(),
-    listLotteryDrawsMock: vi.fn(),
-  }));
+const {
+  getCurrentUserMock,
+  syncLotteryDrawsMock,
+  getCachedWeeklyAnalysisMock,
+  revalidateTagMock,
+} = vi.hoisted(() => ({
+  getCurrentUserMock: vi.fn(),
+  syncLotteryDrawsMock: vi.fn(),
+  getCachedWeeklyAnalysisMock: vi.fn(),
+  revalidateTagMock: vi.fn(),
+}));
 
+vi.mock("next/cache", () => ({ revalidateTag: revalidateTagMock }));
 vi.mock("@/features/auth/server/current-session", () => ({
   getCurrentUser: getCurrentUserMock,
 }));
 vi.mock("@/entities/lottery-draw", () => ({
   syncLotteryDraws: syncLotteryDrawsMock,
-  listLotteryDraws: listLotteryDrawsMock,
+  LOTTERY_DRAW_HISTORY_CACHE_TAG: "lottery-draw-history",
+}));
+vi.mock("@/features/analysis", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/analysis")>()),
+  getCachedWeeklyAnalysis: getCachedWeeklyAnalysisMock,
 }));
 
 import { POST } from "./route";
 
+const periodSummary = {
+  type: "recent",
+  count: 30,
+  drawCount: 1,
+  firstRound: 1249,
+  latestRound: 1249,
+};
+
+function createRequest(body: unknown) {
+  return new Request("http://localhost/api/analysis/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  getCurrentUserMock.mockResolvedValue({ userId: "user-1", nickname: "진" });
-  syncLotteryDrawsMock.mockResolvedValue({ drawCount: 1, latestRound: 1249 });
-  listLotteryDrawsMock.mockResolvedValue([
-    { roundNumber: 1249, numbers: [2, 11, 16, 25, 34, 35] },
-  ]);
+  getCurrentUserMock.mockResolvedValue({ userId: "user-1" });
+  syncLotteryDrawsMock.mockResolvedValue({
+    drawCount: 1249,
+    latestRound: 1249,
+    latestDrawVersion: "version-1",
+    changed: false,
+  });
+  getCachedWeeklyAnalysisMock.mockResolvedValue({
+    analysis: { latestRound: 1249 },
+    period: periodSummary,
+    availableDrawCount: 1249,
+  });
 });
 
-it("syncs real draw data before calculating the analysis", async () => {
-  const response = await POST();
+it("calculates the requested period using the latest shared source version", async () => {
+  const response = await POST(
+    createRequest({ period: { type: "recent", count: 10 } }),
+  );
   const body = await response.json();
 
   expect(response.status).toBe(200);
   expect(syncLotteryDrawsMock).toHaveBeenCalledOnce();
-  expect(listLotteryDrawsMock).toHaveBeenCalledOnce();
-  expect(body.latestRound).toBe(1249);
-  expect(body.analysis.drawCount).toBe(1);
+  expect(getCachedWeeklyAnalysisMock).toHaveBeenCalledWith(1249, "version-1", {
+    type: "recent",
+    count: 10,
+  });
+  expect(body.period).toEqual(periodSummary);
+  expect(body.availableDrawCount).toBe(1249);
+  expect(revalidateTagMock).not.toHaveBeenCalled();
 });
 
-it("reports the round count of the exact data used for the analysis", async () => {
+it("expires shared analysis and history caches after a draw sync changes data", async () => {
   syncLotteryDrawsMock.mockResolvedValue({
-    drawCount: 1248,
-    latestRound: 1248,
+    drawCount: 1250,
+    latestRound: 1250,
+    latestDrawVersion: "version-2",
+    changed: true,
   });
-  listLotteryDrawsMock.mockResolvedValue([
-    { roundNumber: 1248, numbers: [2, 11, 16, 25, 34, 35] },
-    { roundNumber: 1249, numbers: [1, 12, 17, 26, 33, 44] },
-  ]);
 
-  const response = await POST();
-  const body = await response.json();
+  await POST(createRequest({ period: { type: "all" } }));
 
-  expect(body.drawCount).toBe(2);
-  expect(body.latestRound).toBe(1249);
-  expect(body.analysis.latestRound).toBe(1249);
+  expect(revalidateTagMock).toHaveBeenCalledWith("weekly-analysis", {
+    expire: 0,
+  });
+  expect(revalidateTagMock).toHaveBeenCalledWith("lottery-draw-history", {
+    expire: 0,
+  });
+});
+
+it("rejects invalid periods before synchronizing data", async () => {
+  const response = await POST(
+    createRequest({ period: { type: "recent", count: 0 } }),
+  );
+
+  expect(response.status).toBe(400);
+  expect(syncLotteryDrawsMock).not.toHaveBeenCalled();
+});
+
+it("rejects a requested period longer than available history", async () => {
+  syncLotteryDrawsMock.mockResolvedValue({
+    drawCount: 12,
+    latestRound: 12,
+    latestDrawVersion: "version-1",
+    changed: false,
+  });
+
+  const response = await POST(
+    createRequest({ period: { type: "recent", count: 30 } }),
+  );
+
+  expect(response.status).toBe(400);
+  expect(getCachedWeeklyAnalysisMock).not.toHaveBeenCalled();
 });
 
 it("requires an authenticated user", async () => {
   getCurrentUserMock.mockResolvedValue(null);
 
-  const response = await POST();
+  const response = await POST(createRequest({ period: { type: "all" } }));
 
   expect(response.status).toBe(401);
   expect(syncLotteryDrawsMock).not.toHaveBeenCalled();
-});
-
-it("returns a recoverable error if synchronization fails", async () => {
-  syncLotteryDrawsMock.mockRejectedValue(new Error("provider unavailable"));
-
-  const response = await POST();
-
-  expect(response.status).toBe(502);
-  expect(await response.json()).toMatchObject({
-    error: "분석 자료를 가져오지 못했어요.",
-  });
-  expect(listLotteryDrawsMock).not.toHaveBeenCalled();
 });

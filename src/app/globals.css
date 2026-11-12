@@ -266,6 +266,65 @@ a {
   line-height: 1.8;
 }
 
+.analysis-period-control {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) minmax(100px, 0.55fr);
+  align-items: center;
+  gap: 10px;
+  max-width: 520px;
+  margin: 0 0 14px;
+}
+
+.analysis-period-label {
+  color: #53657d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.analysis-period-select,
+.analysis-period-input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #d9e1eb;
+  border-radius: 12px;
+  padding: 0 12px;
+  background: #fff;
+  color: #26364c;
+  font: inherit;
+  font-size: 14px;
+}
+
+.analysis-period-select:focus-visible,
+.analysis-period-input:focus-visible {
+  outline: 3px solid rgb(72 115 170 / 28%);
+  outline-offset: 2px;
+}
+
+.analysis-period-custom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #74839a;
+  font-size: 13px;
+}
+
+.analysis-period-error {
+  flex-basis: 100%;
+  color: #a93636;
+  font-size: 12px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
 .analysis-meta {
   margin: 0 0 14px;
   color: #74839a;
@@ -509,6 +568,20 @@ a {
   transition:
     transform 160ms ease,
     opacity 160ms ease;
+}
+
+@media (max-width: 520px) {
+  .analysis-period-control {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .analysis-period-label {
+    grid-column: 1 / -1;
+  }
+
+  .analysis-period-custom {
+    grid-column: 1 / -1;
+  }
 }
 
 .analysis-run-button:hover:not(:disabled),
