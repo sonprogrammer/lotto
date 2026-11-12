@@ -115,10 +115,10 @@ MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `mod
 | `users`              | `_id: ObjectId`, `kakaoId: string`, `nickname?: string`, `createdAt: Date`                                                                                                                                                                        | `kakaoId` 고유 인덱스 적용                                   | 새 카카오 로그인은 닉네임을 저장. 기존 계정에서 닉네임이 없는 문서는 다음 로그인 때 갱신 |
 | `appSessions`        | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `tokenHash: 64자리 SHA-256 16진수`, `createdAt: Date`, `expiresAt: Date`                                                                                                                             | `tokenHash` 고유 인덱스와 `expiresAt` TTL 인덱스 적용        | 로그인 기능에서 사용                                                                     |
 | `lottery_draws`      | `_id: ObjectId`, `roundNumber: 양의 정수`, `drawDate: Date`, `numbers: 1–45의 중복 없는 정수 6개`, `bonusNumber: 1–45의 정수(당첨 번호와 중복 불가)`, `prizesByRank: { rank: 1–5, winnerCount: 0 이상의 정수, amountPerWinner: 0 이상의 정수 }[]` | `roundNumber` 고유 인덱스                                    | 동행복권 공개 회차 조회 응답을 분석 실행 때 upsert하고 분석·회차 목록에서 사용           |
-| `saved_combinations` | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `targetRound: 양의 정수`, `numbers: 1–45의 중복 없는 정수 6개`, `generationMethod: automatic/selected/ai-assisted`, `analysisSummary: string`, `createdAt: Date`                                     | `{ userId, createdAt desc }`, `{ userId, targetRound }` 후보 | 조합마다 문서 하나. 등수와 당첨금은 연결된 회차에서 계산하며 조합 문서에 복사하지 않음   |
-| `saved_prompts`      | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `prompt: string`, `sortOrder: 0 이상의 정수`, `createdAt: Date`, `updatedAt: Date`                                                                                                                   | `{ userId, sortOrder }` 후보                                 | 사용자별 최대 5개는 저장 작업에서 보장. 목록 라벨은 프롬프트 본문 일부                   |
+| `saved_combinations` | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `targetRound: 양의 정수`, `numbers: 1–45의 중복 없는 정수 6개`, `analysisSummary: string`, `createdAt: Date`                                                                                         | `{ userId, createdAt desc }`, `{ userId, targetRound }` 후보 | 조합마다 문서 하나. 등수와 당첨금은 연결된 회차에서 계산하며 조합 문서에 복사하지 않음   |
+| `saved_prompts`      | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `title: string`, `content: string`, `sortOrder: 0 이상의 정수`, `createdAt: Date`, `updatedAt: Date`                                                                                                 | `{ userId, sortOrder }` 후보                                 | 이슈 #7에서 구현. 사용자별 최대 5개는 저장 작업에서 보장. 목록은 제목으로 선택           |
 
-숫자 배열은 1–45의 정수 6개로 고정하고 중복을 금지합니다. 추첨 당첨 번호와 보너스 번호도 서로 달라야 합니다. 조합 생성 방식은 `automatic`, `selected`, `ai-assisted` 중 하나입니다. 등수·당첨금은 대상 회차 문서의 번호와 등수별 자료로 계산해 정정 시 중복된 결과가 어긋나는 것을 피합니다.
+숫자 배열은 1–45의 정수 6개로 고정하고 중복을 금지합니다. 추첨 당첨 번호와 보너스 번호도 서로 달라야 합니다. 번호 생성은 하나의 흐름이므로 생성 방식 enum과 저장 조합의 `generationMethod` 필드를 두지 않습니다. 등수·당첨금은 대상 회차 문서의 번호와 등수별 자료로 계산해 정정 시 중복된 결과가 어긋나는 것을 피합니다.
 
 `prizesByRank`의 등수는 1–5 사이에서 중복될 수 없습니다. 어떤 등수 자료가 반드시 모두 있어야 하는지는 당첨 번호 제공처의 계약을 확인한 뒤 정합니다.
 
@@ -152,9 +152,10 @@ MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `mod
 - 현재 수집 경로는 `https://www.dhlottery.co.kr/lt645/selectPstLt645Info.do?srchLtEpsd=all`입니다. 웹사이트가 사용하는 공개 조회 경로이며 별도 공식 API 문서나 안정성 보장은 확인되지 않았으므로, 응답이 바뀌거나 HTML 오류 응답이 오면 저장하지 않고 분석 오류 상태를 보여줍니다.
 - 회차 목록은 최신 회차부터 페이지 단위로 조회하고, 최신 회차 자료 지문과 페이지 범위를 기준으로 Next.js 서버 캐시를 사용합니다. 화면은 회차, 추첨일, 당첨 번호, 보너스 번호, 등위별 당첨자 수와 1인당 상금을 표시합니다.
 - 로딩 중에는 결과를 임시로 만들어 보이지 않습니다. 화면 구조를 반영한 스켈레톤과 명시적인 오류·빈 상태를 사용합니다.
-- 번호 생성은 서버가 과거 회차 통계를 바탕으로 조합을 계산하고, Groq AI가 선택 프롬프트를 생성 방식과 관계없이 허용된 조건으로 해석하며 생성 요청 한 번마다 조합 전체에 대한 설명 1~2줄을 작성합니다. 프롬프트가 없으면 기본 통계 규칙을 적용합니다. 초기 모델은 `openai/gpt-oss-120b`를 검토하며 배포 전 계정의 사용 가능 모델과 무료 한도를 확인합니다.
+- 번호 생성은 하나의 AI 보조 통계 생성 흐름입니다. Groq AI가 직접 입력한 의견을 통계 및 선택 번호와 함께 허용된 조건으로 해석하고 서버가 조건을 검증해 실제 조합을 계산합니다. 의견이 없으면 선택 번호 유무와 관계없이 기본 프롬프트를 사용합니다. 입력과 기준 자료 검증을 통과한 생성 요청마다 AI 추천을 정확히 한 번 호출하며 조합 전체에 대한 설명 1~2줄을 작성합니다. 초기 모델은 `openai/gpt-oss-120b`를 검토하며 배포 전 계정의 사용 가능 모델과 무료 한도를 확인합니다.
 - Groq에는 선택 번호, 프롬프트 본문, 필요한 집계 통계만 전송합니다. 닉네임·이메일·계정 ID·저장 조합·원본 전체 회차는 보내지 않습니다. 호출은 생성 요청당 최대 1회이며 실패하거나 무료 한도를 초과하면 임의의 AI 결과를 만들지 않고 재시도 안내를 표시합니다.
-- 번호 생성은 1~45 사이에서 서로 다른 번호 6개를 만듭니다. 고정 번호는 반드시 포함하며 6개를 모두 고르면 한 조합만 표시합니다. 기본 분석 기간은 최근 30회입니다. 재생성 시 새 후보를 만들고, 생성 시드와 기준 회차를 결과에 기록합니다.
+- 번호 생성은 1~45 사이에서 서로 다른 번호 6개를 만듭니다. 고정 번호는 0~6개까지 선택적으로 입력하며 모든 결과에 반드시 포함합니다. 6개를 모두 고르면 한 조합만 표시합니다. 기본 분석 기간은 최근 30회입니다. 재생성 시 새 후보를 만들고, 생성 시드와 기준 회차를 결과에 기록합니다.
+- 저장 프롬프트 UI는 이슈 #7 범위입니다. 사용자별 최대 5개의 `title`과 `content`를 저장하고 생성 시 제목으로 선택하거나 새 의견을 입력합니다. 둘 다 없으면 기본 프롬프트를 적용합니다. 이슈 #6에서는 직접 입력과 기본 프롬프트만 지원하며 저장 프롬프트 저장소·UI는 구현하지 않습니다.
 - 나중에 생성 결과를 재현할 수 있도록 기준 회차, 분석 기간, 프롬프트, 적용 조건을 저장하는 방안을 검토합니다. 저장 기간은 미정입니다.
 - 시뮬레이션은 매 회차 직전의 정보만 사용하고, 과거 결과가 미래 당첨 가능성을 뜻하지 않는다고 표시합니다.
 
