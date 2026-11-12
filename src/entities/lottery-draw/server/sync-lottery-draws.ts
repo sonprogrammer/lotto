@@ -1,4 +1,6 @@
 import { getMongoDb } from "@/shared/server/mongodb/client";
+import { LotteryDrawRecordSchema } from "../model/document";
+import { createLotteryDrawCacheVersion } from "./cache-version";
 import { parseLotteryDrawSourceResponse } from "./source-response";
 
 const ALL_DRAWS_URL =
@@ -9,45 +11,75 @@ const LATEST_DRAW_URL =
 export async function syncLotteryDraws(): Promise<{
   drawCount: number;
   latestRound: number;
+  latestDrawVersion: string;
+  changed: boolean;
 }> {
-  const [allDrawsResponse, latestDrawResponse] = await Promise.all([
-    fetchLotteryDrawSource(ALL_DRAWS_URL),
-    fetchLotteryDrawSource(LATEST_DRAW_URL),
-  ]);
+  const latestDrawResponse = await fetchLotteryDrawSource(LATEST_DRAW_URL);
+  const latestPublishedDraw = parseLotteryDrawSourceResponse(latestDrawResponse)
+    .sort((left, right) => left.roundNumber - right.roundNumber)
+    .at(-1);
+  if (!latestPublishedDraw) throw new Error("Latest lottery draw is missing");
+  const latestRound = latestPublishedDraw.roundNumber;
+
+  const db = await getMongoDb();
+  const collection = db.collection("lottery_draws");
+
+  await collection.createIndex({ roundNumber: 1 }, { unique: true });
+  const storedLatestDocument = await collection.findOne(
+    {},
+    {
+      projection: {
+        _id: 0,
+        roundNumber: 1,
+        drawDate: 1,
+        numbers: 1,
+        bonusNumber: 1,
+        prizesByRank: 1,
+      },
+      sort: { roundNumber: -1 },
+    },
+  );
+  const storedLatestDraw = storedLatestDocument
+    ? LotteryDrawRecordSchema.parse(storedLatestDocument)
+    : null;
+
+  if (storedLatestDraw && storedLatestDraw.roundNumber > latestRound) {
+    throw new Error(
+      "Stored lottery history is newer than the provider response",
+    );
+  }
+
+  const storedDrawCount = await collection.countDocuments({});
+  const latestDrawVersion = createLotteryDrawCacheVersion(latestPublishedDraw);
+  if (
+    storedLatestDraw?.roundNumber === latestRound &&
+    storedDrawCount === latestRound &&
+    createLotteryDrawCacheVersion(storedLatestDraw) === latestDrawVersion
+  ) {
+    return {
+      drawCount: latestRound,
+      latestRound,
+      latestDrawVersion,
+      changed: false,
+    };
+  }
+
+  const allDrawsResponse = await fetchLotteryDrawSource(ALL_DRAWS_URL);
   const draws = parseLotteryDrawSourceResponse(allDrawsResponse).sort(
     (left, right) => left.roundNumber - right.roundNumber,
   );
-  const [latestPublishedDraw] =
-    parseLotteryDrawSourceResponse(latestDrawResponse);
-  const latestRound = draws.at(-1)?.roundNumber ?? 0;
   if (
     draws.length !== latestRound ||
     draws.some(({ roundNumber }, index) => roundNumber !== index + 1)
   ) {
     throw new Error("Lottery draw source returned an incomplete history");
   }
-  if (
-    latestPublishedDraw.roundNumber !== latestRound ||
-    JSON.stringify(draws.at(-1)) !== JSON.stringify(latestPublishedDraw)
-  ) {
+  if (JSON.stringify(draws.at(-1)) !== JSON.stringify(latestPublishedDraw)) {
     throw new Error(
       "Lottery draw history does not match the latest published round",
     );
   }
 
-  const db = await getMongoDb();
-  const collection = db.collection("lottery_draws");
-
-  await collection.createIndex({ roundNumber: 1 }, { unique: true });
-  const storedLatestDraw = await collection.findOne(
-    {},
-    { projection: { _id: 0, roundNumber: 1 }, sort: { roundNumber: -1 } },
-  );
-  if (storedLatestDraw && storedLatestDraw.roundNumber > latestRound) {
-    throw new Error(
-      "Stored lottery history is newer than the provider response",
-    );
-  }
   await collection.bulkWrite(
     draws.map((draw) => ({
       updateOne: {
@@ -62,6 +94,8 @@ export async function syncLotteryDraws(): Promise<{
   return {
     drawCount: draws.length,
     latestRound,
+    latestDrawVersion,
+    changed: true,
   };
 }
 

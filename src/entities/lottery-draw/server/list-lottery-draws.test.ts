@@ -1,21 +1,29 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { listLotteryDraws, listLotteryDrawsPage } from "./list-lottery-draws";
 
-const { findMock, sortMock, limitMock, toArrayMock } = vi.hoisted(() => ({
-  findMock: vi.fn(),
-  sortMock: vi.fn(),
-  limitMock: vi.fn(),
-  toArrayMock: vi.fn(),
-}));
+const { findMock, findOneMock, sortMock, limitMock, toArrayMock } = vi.hoisted(
+  () => ({
+    findMock: vi.fn(),
+    findOneMock: vi.fn(),
+    sortMock: vi.fn(),
+    limitMock: vi.fn(),
+    toArrayMock: vi.fn(),
+  }),
+);
 
+vi.mock("next/cache", () => ({
+  cacheLife: vi.fn(),
+  cacheTag: vi.fn(),
+}));
 vi.mock("@/shared/server/mongodb/client", () => ({
   getMongoDb: async () => ({
-    collection: () => ({ find: findMock }),
+    collection: () => ({ find: findMock, findOne: findOneMock }),
   }),
 }));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  findOneMock.mockResolvedValue(null);
   findMock.mockReturnValue({ sort: sortMock });
   sortMock.mockReturnValue({ limit: limitMock, toArray: toArrayMock });
   limitMock.mockReturnValue({ toArray: toArrayMock });
