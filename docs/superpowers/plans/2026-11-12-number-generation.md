@@ -1,75 +1,115 @@
-# Number Generation Implementation Plan
+# 번호 조합 생성 통합 구현 계획
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 로그인 사용자가 통계와 선택 조건으로 1~10개 조합을 만들고 요청당 AI 설명 1~2줄을 확인한다.
+**Goal:** 세 생성 방식을 하나로 통합하고 매 생성 요청에서 통계와 선택 입력을 바탕으로 Groq AI 추천을 제공한다.
 
-**Architecture:** 서버가 기간별 공개 통계를 읽어 후보 조합을 계산한다. Groq은 프롬프트 조건 해석과 조합 전체 설명에 사용하며, 응답은 검증한다. 화면은 단일 생성 요청과 결과를 표시한다.
+**Architecture:** 클라이언트는 선택 번호 0~6개와 선택 의견을 단일 생성 요청에 담는다. 서버는 매 요청 Groq을 최대 한 번 호출해 기본 또는 사용자 의견을 해석하고, 검증된 조건을 통계 기반 조합 생성기에 전달한다.
 
-**Tech Stack:** Next.js 16, TypeScript, Zod, MongoDB, TanStack Query, Groq HTTP API
+**Tech Stack:** Next.js 16, TypeScript, Zod, TanStack Query, Groq HTTP API, Vitest, React Testing Library
 
 **Spec:** `docs/superpowers/specs/2026-11-12-number-generation-design.md`
 
 ## Global Constraints
 
-- 로그인 전에는 무작위 미리보기만 제공한다.
-- 번호는 1~45의 서로 다른 정수 6개, 요청 개수는 1~10개이며 기본 5개다.
-- 비밀 키는 서버에만 둔다. 당첨 확률 상승을 암시하지 않는다.
-- AI 요청은 생성당 한 번이고, 설명은 조합 전체에 대해 1~2줄이다.
-- 각 React 컴포넌트와 커스텀 훅은 별도 파일에 둔다.
+- 번호는 1~45의 서로 다른 정수 6개이며, 고른 번호는 모든 조합에 포함한다.
+- 한 번에 1~10개 조합을 만들고 기본값은 5개다. 번호 6개를 모두 고르면 1개 조합만 만든다.
+- 프롬프트가 비어 있어도 기본 프롬프트로 AI를 호출한다. 한 생성 요청의 AI 호출은 최대 1회다.
+- 입력 및 집계 통계만 AI에 보내며 계정 식별 정보와 원본 전체 회차는 보내지 않는다.
+- AI 추천은 당첨 예측이나 확률 상승으로 표현하지 않는다.
+- React 컴포넌트와 커스텀 훅은 각각 별도 파일에 둔다.
+- 저장 프롬프트 관리 UI는 이슈 #7 범위다. 이 계획에서는 직접 입력과 기본 프롬프트만 제공한다.
 
 ## Review Focus
 
-- 고정 번호 중복·범위 초과 입력은 요청 단계에서 거절한다.
-- 고정 번호 6개와 요청 개수 2개 이상은 거절한다.
-- 프롬프트 조건이 고정 번호와 충돌하면 조합을 만들지 않고 이유를 알린다.
-- Groq 실패·한도 초과는 AI 설명을 지어내지 않고 오류와 재시도를 표시한다.
-- 연속 클릭은 중복 요청을 만들지 않는다.
+- 번호 미선택은 유효하고, 번호 중복·범위 오류는 요청 스키마에서 거절한다.
+- 번호 6개 선택과 조합 개수 2개 이상은 거절하고, 1개 요청은 통과시킨다.
+- 사용자 의견이 비어 있으면 서버 기본 프롬프트가 실제 Groq 요청에 전달된다.
+- 사용자 의견이 있으면 기본 프롬프트 대신 해당 의견이 전달되고 선택 번호와 함께 해석된다.
+- Groq 실패·한도 초과 시 AI가 성공한 것처럼 결과를 만들지 않고 기존 오류·재시도 흐름을 유지한다.
 
 ---
 
-### Task 1: 입력과 통계 기반 조합 계산
+### Task 1: 요청 모델과 생성 폼 통합
 
-**Files:** `src/features/generation/model/generation-request.ts`, `src/features/generation/lib/generate-combinations.ts`, 각 `.test.ts`
+**Files:**
 
-**Interfaces:** `GenerationRequestSchema`는 방식, 기간, 고정 번호, 개수, 프롬프트를 검증한다. `generateCombinations({analysis, fixedNumbers, count, seed, constraints})`는 중복 없는 조합과 적용 점수를 반환한다.
+- Modify: `src/features/generation/model/generation-request.ts`
+- Test: `src/features/generation/model/generation-request.test.ts`
+- Modify: `src/features/generation/hooks/use-generation-form.ts`
+- Modify: `src/features/generation/components/generation-dashboard.tsx`
+- Test: `src/features/generation/components/generation-dashboard.test.tsx`
 
-- [ ] 실패 테스트: 잘못된 고정 번호, 6개 고정 시 여러 개 요청, 결과 내 중복, 같은 시드의 재현, 조건 충돌.
-- [ ] 테스트 실패 확인.
-- [ ] Zod 입력 스키마와 결정적 후보 생성·통계 점수 계산 구현.
-- [ ] 단위 테스트 통과.
+**Interfaces:**
 
-### Task 2: Groq 조건 해석과 요청별 설명
+- Request body: `{ fixedNumbers: number[], period: AnalysisPeriod, count: number, prompt?: string }`.
+- `GenerationRequest` no longer has `method`; `fixedNumbers` accepts zero through six unique values.
+- The form has no generation-mode state. It submits one request for any number of selected balls, including none.
 
-**Files:** `src/features/generation/server/groq-recommendation.ts`, `.test.ts`
+- [x] **Step 1: Add failing request-schema tests** asserting empty `fixedNumbers` defaults to `[]`, 0–6 unique numbers pass, invalid/duplicate values fail, prompt max length remains 500, and six fixed numbers require `count: 1`.
+- [x] **Step 2: Run `npm test -- src/features/generation/model/generation-request.test.ts` and confirm the new assertions fail against the method-specific schema.**
+- [x] **Step 3: Remove `method` and method-specific refinements from `GenerationRequestSchema`; preserve period, count, prompt and six-number constraints.**
+- [x] **Step 4: Add failing dashboard tests** asserting there is no mode selector, balls can be selected from zero through six, and submit payload omits `method`.
+- [x] **Step 5: Run `npm test -- src/features/generation/components/generation-dashboard.test.tsx` and confirm the new assertions fail.**
+- [x] **Step 6: Remove mode state and conditional picker from `use-generation-form.ts`; always allow 0–6 numbers and submit the unified request.**
+- [x] **Step 7: Simplify `generation-dashboard.tsx` to one ball picker and add visible copy that no opinion uses the default analysis prompt.**
+- [x] **Step 8: Run both targeted test files and confirm they pass.**
 
-**Interfaces:** `getGroqRecommendation({prompt, fixedNumbers, analysisSummary})`는 검증된 조건과 1~2줄 설명을 반환한다.
+### Task 2: Always apply AI recommendation once per request
 
-- [ ] 실패 테스트: Groq 요청 1회, 서버 키만 사용, 잘못된 응답 거절, 429·타임아웃 처리.
-- [ ] 테스트 실패 확인.
-- [ ] `GROQ_API_KEY`로 서버에서 HTTP 호출하고 Zod로 응답 검증.
-- [ ] 단위 테스트 통과.
+**Files:**
 
-### Task 3: 로그인 보호 생성 API
+- Modify: `src/features/generation/server/run-generation.ts`
+- Test: `src/features/generation/server/run-generation.test.ts`
+- Modify: `src/app/api/generation/route.test.ts`
 
-**Files:** `src/app/api/generation/route.ts`, `.test.ts`, `src/features/generation/server/run-generation.ts`
+**Interfaces:**
 
-**Interfaces:** `POST /api/generation`은 인증·입력 검증 뒤 최신 공개 회차의 선택 기간 통계를 사용해 생성 결과, 기준 회차, 적용 조건, 공통 AI 설명을 반환한다.
+- `runGeneration(request: GenerationRequest)` always calls `getGroqRecommendation` exactly once.
+- The recommendation receives `request.prompt` when non-empty; otherwise it receives `DEFAULT_AI_PROMPT`.
+- It always receives all selected fixed numbers and aggregate analysis. Validated AI constraints feed `generateCombinations`.
 
-- [ ] 실패 테스트: 비로그인 401, 잘못된 요청 400, 정상 요청, 제공처·AI 실패.
-- [ ] 테스트 실패 확인.
-- [ ] 기존 분석·캐시 함수를 재사용해 API 연결.
-- [ ] 라우트 테스트 통과.
+- [x] **Step 1: Add failing server tests** for no prompt using the default prompt, custom prompt replacing the default, zero fixed numbers being accepted, and exactly one recommendation call for a request producing multiple combinations.
+- [x] **Step 2: Run `npm test -- src/features/generation/server/run-generation.test.ts` and confirm the no-prompt case fails because the recommendation constraints are currently bypassed.**
+- [x] **Step 3: Remove conditional AI gating in `run-generation.ts`; always send one recommendation request and always apply its validated constraints.**
+- [x] **Step 4: Update API route fixtures to omit `method`; assert a request with no selected numbers is accepted and invalid selected numbers remain rejected.**
+- [x] **Step 5: Run targeted server and API tests; confirm all pass, including Groq error handling and one-call behavior.**
 
-### Task 4: 생성 화면과 문서
+### Task 3: Align product and technical documentation
 
-**Files:** `src/app/generate/page.tsx`, `src/features/generation/components/*`, `src/features/generation/hooks/use-generate-combinations.ts`, 관련 테스트, `spec.md`, `architecture.md`, `.env.example`
+**Files:**
 
-**Interfaces:** 로그인 화면에서 방법·번호·기간·개수·프롬프트를 고르고 생성한다. 요청별 결과와 공통 설명을 표시한다.
+- Modify: `spec.md`
+- Modify: `architecture.md`
+- Modify: `docs/superpowers/specs/2026-11-12-number-generation-design.md`
 
-- [ ] 실패 테스트: 기본 5개, 입력 오류, 로딩·재시도, 요청별 AI 설명 1개.
-- [ ] 테스트 실패 확인.
-- [ ] 화면·훅과 문서·환경변수 이름 연결.
-- [ ] `ux-review` 검토 후 수정.
-- [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, `npm run format:check` 통과.
-- [ ] PR 생성. GitHub Actions 상태는 조회하지 않는다.
+- [x] **Step 1: Update `spec.md`** to describe one generation flow, 0–6 optional fixed numbers, default prompt when no opinion is provided, one AI call per request, and issue #7 saved-prompt UX (up to five title/content entries selected by title or entered anew).
+- [x] **Step 2: Update `architecture.md`** to remove the three generation-mode enum and the redundant `generationMethod` field from future saved-combination documents; describe one AI-assisted statistics generation flow and update saved prompts to have separate `title` and `content` fields.
+- [x] **Step 3: Review the three documents against the approved design and ensure issue #7 remains documentation/architecture scope only in this implementation.**
+
+### Task 4: Align saved-combination model with unified generation
+
+**Files:**
+
+- Modify: `src/entities/saved-combination/model/document.ts`
+- Test: `src/entities/saved-combination/model/document.test.ts`
+
+**Interfaces:**
+
+- `SavedCombinationDocument` no longer includes `generationMethod`, because the product has one generation flow.
+- Existing documents carrying the legacy field remain parseable; Zod strips the obsolete unknown key by default.
+
+- [x] **Step 1: Add a failing model test** asserting the saved combination schema accepts a valid document without `generationMethod` and parsed output does not expose that obsolete field.
+- [x] **Step 2: Run `npm test -- src/entities/saved-combination/model/document.test.ts` and confirm the new assertion fails while the schema still declares the legacy field.**
+- [x] **Step 3: Remove `generationMethod` from `SavedCombinationDocumentSchema` and update the shared valid fixture to the new shape.**
+- [x] **Step 4: Run the model test and confirm both new-shape acceptance and existing validation cases pass.**
+
+### Task 5: UX review and local verification
+
+**Files:** All changed UI and feature files.
+
+- [x] **Step 1: Run the `ux-review` skill** on the unified generation screen, including empty input, selected balls, loading, AI error, and retry states; apply any relevant findings.
+- [x] **Step 2: Fix reviewed copy** so the initial empty state does not imply numbers or opinions are required, and explain clearly that no opinion uses the default prompt for AI recommendation. Remove obsolete mode-card CSS left behind by the removed modes.
+- [x] **Step 3: Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, and `npm run format:check`; all must pass.**
+- [x] **Step 4: Review the final diff for remaining method labels, branches, or tests that assume automatic/selected/AI-assisted modes.**
+- [x] **Step 5: Report local verification results and prepare the PR update. Do not inspect GitHub Actions status unless requested.**
