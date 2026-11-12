@@ -21,17 +21,21 @@ function getNumberTone(number: number) {
 }
 
 export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
-  const analysisRequest = useRunWeeklyAnalysis();
   const [period, setPeriod] = useState<AnalysisPeriod>({
     type: "recent",
     count: 30,
   });
+  const analysisRequest = useRunWeeklyAnalysis(period);
   const [customCount, setCustomCount] = useState("");
   const [isCustomPeriod, setIsCustomPeriod] = useState(false);
+  const [hasRequestedCurrentPeriod, setHasRequestedCurrentPeriod] =
+    useState(false);
   const [knownAvailableDrawCount, setKnownAvailableDrawCount] = useState<
     number | undefined
   >();
-  const analysisResult = analysisRequest.data;
+  const analysisResult = hasRequestedCurrentPeriod
+    ? analysisRequest.data
+    : undefined;
   const analysis = analysisResult?.analysis;
   const availableDrawCount =
     analysisResult?.availableDrawCount ?? knownAvailableDrawCount;
@@ -41,9 +45,19 @@ export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
       if (analysisResult) {
         setKnownAvailableDrawCount(analysisResult.availableDrawCount);
       }
-      analysisRequest.reset();
+      setHasRequestedCurrentPeriod(false);
       update(value);
     };
+  }
+
+  async function runAnalysis() {
+    setHasRequestedCurrentPeriod(true);
+    try {
+      const result = await analysisRequest.run();
+      setKnownAvailableDrawCount(result.availableDrawCount);
+    } catch {
+      // The query exposes the error state for the current period.
+    }
   }
 
   return (
@@ -72,23 +86,23 @@ export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
           className="analysis-run-button"
           type="button"
           disabled={
-            analysisRequest.isPending ||
+            analysisRequest.isFetching ||
             (isCustomPeriod &&
               (!/^[1-9]\d*$/.test(customCount) ||
                 !Number.isSafeInteger(Number(customCount)) ||
                 (availableDrawCount !== undefined &&
                   Number(customCount) > availableDrawCount)))
           }
-          onClick={() => analysisRequest.mutate(period)}
+          onClick={() => void runAnalysis()}
         >
-          {analysisRequest.isPending
+          {analysisRequest.isFetching
             ? "분석 중"
             : analysisRequest.isError
               ? "다시 분석하기"
               : "분석하기"}
         </button>
 
-        {analysisRequest.isPending ? (
+        {analysisRequest.isFetching ? (
           <div
             className="analysis-loading-state"
             role="status"
@@ -110,7 +124,7 @@ export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
               ))}
             </div>
           </div>
-        ) : analysisRequest.isIdle ? (
+        ) : !hasRequestedCurrentPeriod ? (
           <p className="analysis-empty-state">
             선택한 기간으로 분석을 실행해 결과를 확인해 주세요.
           </p>

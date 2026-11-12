@@ -132,6 +132,50 @@ it("clears results when the selected period changes", async () => {
   ).toBeInTheDocument();
 });
 
+it("reuses a fresh browser-cached analysis when returning to a prior period", async () => {
+  fetchMock
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ analysis, period, availableDrawCount: 1249 }),
+        { status: 200 },
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          analysis,
+          period: { ...period, count: 20 },
+          availableDrawCount: 1249,
+        }),
+        { status: 200 },
+      ),
+    );
+  renderDashboard();
+
+  await userEvent.click(screen.getByRole("button", { name: "분석하기" }));
+  await screen.findByText(/1249회차 기준/);
+  await userEvent.selectOptions(
+    screen.getByRole("combobox", { name: "분석 기간" }),
+    "recent:20",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "분석하기" }));
+  await screen.findByText(
+    (_, element) => element?.classList.contains("analysis-meta") ?? false,
+  );
+  await userEvent.selectOptions(
+    screen.getByRole("combobox", { name: "분석 기간" }),
+    "recent:30",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "분석하기" }));
+
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(
+    screen.getByText(
+      (_, element) => element?.classList.contains("analysis-meta") ?? false,
+    ),
+  ).toHaveTextContent("최근 30회");
+});
+
 it("requires a positive integer before running a custom period", async () => {
   renderDashboard();
   const selector = screen.getByRole("combobox", { name: "분석 기간" });
