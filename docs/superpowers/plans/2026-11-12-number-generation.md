@@ -113,3 +113,33 @@
 - [x] **Step 3: Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, and `npm run format:check`; all must pass.**
 - [x] **Step 4: Review the final diff for remaining method labels, branches, or tests that assume automatic/selected/AI-assisted modes.**
 - [x] **Step 5: Report local verification results and prepare the PR update. Do not inspect GitHub Actions status unless requested.**
+
+### Task 6: Resolve final branch-review findings
+
+**Files:**
+
+- Modify: `src/features/generation/hooks/use-generation-form.ts`
+- Modify: `src/features/generation/components/generation-dashboard.tsx`
+- Test: `src/features/generation/components/generation-dashboard.test.tsx`
+- Modify: `src/features/generation/lib/generate-combinations.ts`
+- Test: `src/features/generation/lib/generate-combinations.test.ts`
+- Create: `src/features/generation/lib/summarize-generation-analysis.ts`
+- Test: `src/features/generation/lib/summarize-generation-analysis.test.ts`
+- Modify: `src/features/generation/server/run-generation.ts`
+- Test: `src/features/generation/server/run-generation.test.ts`
+- Modify: `src/features/generation/hooks/use-generate-combinations.ts`
+- Modify: `src/features/generation/components/generation-results.tsx`
+- Test: `src/features/generation/components/generation-dashboard.test.tsx`
+- Modify: `src/features/generation/model/generation-request.ts`
+- Modify: `src/features/analysis/index.ts`
+- Modify: `architecture.md`
+
+- [x] **Step 1: Add failing regressions** for edits during a pending request not enabling a second request; same generation seed yielding the same candidate batch while different seeds can vary a constrained batch; and deterministic top-five frequency/absence summary rendered with results.
+- [x] **Step 2: Fix pending input behavior** by disabling generation controls while pending and guarding form handlers; keep one request in flight until it settles.
+- [x] **Step 3: After ranking candidates by score, take the top `min(count * 3, candidateCount)` window, use the request-seeded RNG to sample `count` candidates without replacement, then order the selected results by score.** Preserve deterministic scores, constraints, no duplicates, and same-seed reproducibility while allowing different seeds to yield different batches when the candidate pool permits.
+- [x] **Step 4: Add `summarizeGenerationAnalysis(analysis: WeeklyAnalysis): GenerationStatisticsSummary`** returning up to five most frequent numbers and up to five longest current absence gaps, sorted deterministically by metric descending and number ascending for ties; return it alongside the generation result and render it separately from the AI explanation.
+- [x] **Step 5: Replace internal analysis imports with the public `@/features/analysis` exports; update `architecture.md` to say Groq is selected and leave account/model limits as operational checks.**
+- [x] **Step 6: Run targeted generation tests, then `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, and `npm run format:check`; all must pass.**
+- [x] **Step 7: Review the fix diff and rerun the `ux-review` skill for pending controls and the statistics summary.**
+
+**Task 6 interfaces:** `GenerationStatisticsSummary` has `mostFrequentNumbers: Array<{ number: number; count: number }>` and `longestCurrentAbsences: Array<{ number: number; drawsSinceLastAppearance: number }>`. Omit numbers with zero frequency and omit never-seen (`null`) gaps; cap each list at five.
