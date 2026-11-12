@@ -115,6 +115,86 @@ export function generateCombinations({
     }
   }
   if (candidates.size < count) {
+    // Random sampling can miss rare, valid combinations. Exhaust the remaining
+    // search space before reporting that the constraints are impossible.
+    const shuffled = [...pool];
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(random() * (index + 1));
+      [shuffled[index], shuffled[swapIndex]] = [
+        shuffled[swapIndex],
+        shuffled[index],
+      ];
+    }
+    const suffixOdd = Array.from({ length: shuffled.length + 1 }, () => 0);
+    const suffixLow = Array.from({ length: shuffled.length + 1 }, () => 0);
+    for (let index = shuffled.length - 1; index >= 0; index -= 1) {
+      suffixOdd[index] = suffixOdd[index + 1] + (shuffled[index] % 2);
+      suffixLow[index] = suffixLow[index + 1] + (shuffled[index] <= 22 ? 1 : 0);
+    }
+    const selected: number[] = [];
+    const search = (
+      start: number,
+      selectedOdd: number,
+      selectedLow: number,
+    ): void => {
+      if (candidates.size >= count) return;
+      const slots = 6 - fixedNumbers.length - selected.length;
+      if (shuffled.length - start < slots) return;
+      if (constraints.oddCount !== undefined) {
+        const required = constraints.oddCount - oddFixed - selectedOdd;
+        if (
+          required < 0 ||
+          required > slots ||
+          required > suffixOdd[start] ||
+          slots - required > shuffled.length - start - suffixOdd[start]
+        )
+          return;
+      }
+      if (constraints.lowCount !== undefined) {
+        const required = constraints.lowCount - lowFixed - selectedLow;
+        if (
+          required < 0 ||
+          required > slots ||
+          required > suffixLow[start] ||
+          slots - required > shuffled.length - start - suffixLow[start]
+        )
+          return;
+      }
+      if (slots === 0) {
+        const numbers = [...fixedNumbers, ...selected].sort(
+          (left, right) => left - right,
+        );
+        if (!matchesConstraints(numbers, constraints)) return;
+        const key = numbers.join(",");
+        if (!candidates.has(key))
+          candidates.set(key, {
+            numbers,
+            score: scoreCombination(numbers, analysis),
+          });
+        return;
+      }
+      for (let index = start; index <= shuffled.length - slots; index += 1) {
+        const number = shuffled[index];
+        if (
+          constraints.allowConsecutive === false &&
+          [...fixedNumbers, ...selected].some(
+            (existing) => Math.abs(existing - number) === 1,
+          )
+        )
+          continue;
+        selected.push(number);
+        search(
+          index + 1,
+          selectedOdd + (number % 2),
+          selectedLow + (number <= 22 ? 1 : 0),
+        );
+        selected.pop();
+        if (candidates.size >= count) return;
+      }
+    };
+    search(0, 0, 0);
+  }
+  if (candidates.size < count) {
     throw new Error(
       "Impossible generation constraints: insufficient unique combinations",
     );

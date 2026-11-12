@@ -59,6 +59,22 @@ describe("generateCombinations", () => {
     }
   });
 
+  it("finds a feasible combination when narrow constraints evade random sampling", () => {
+    const result = generateCombinations({
+      analysis,
+      fixedNumbers: [],
+      count: 1,
+      seed: "narrow",
+      constraints: { oddCount: 6, lowCount: 6 },
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].numbers).toHaveLength(6);
+    expect(
+      result[0].numbers.every((number) => number <= 22 && number % 2 === 1),
+    ).toBe(true);
+  });
+
   it("rejects constraints conflicting with fixed numbers", () => {
     expect(() =>
       generateCombinations({
