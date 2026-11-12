@@ -2,98 +2,63 @@ import { describe, expect, it } from "vitest";
 import { GenerationRequestSchema } from "./generation-request";
 
 describe("GenerationRequestSchema", () => {
-  const selectedRequest = { method: "selected", fixedNumbers: [1, 7] };
-
-  it("defaults to five combinations and the latest 30 draws", () => {
-    expect(GenerationRequestSchema.parse({ method: "automatic" })).toEqual({
-      method: "automatic",
+  it("defaults to no fixed numbers, five combinations and the latest 30 draws", () => {
+    expect(GenerationRequestSchema.parse({})).toEqual({
       fixedNumbers: [],
       count: 5,
       period: { type: "recent", count: 30 },
     });
   });
 
-  it.each([
-    { fixedNumbers: [0] },
-    { fixedNumbers: [46] },
-    { fixedNumbers: [1.5] },
-    { fixedNumbers: [2, 2] },
-  ])("rejects invalid fixed numbers %j", ({ fixedNumbers }) => {
-    expect(
-      GenerationRequestSchema.safeParse({
-        ...selectedRequest,
-        fixedNumbers,
-      }).success,
-    ).toBe(false);
-  });
+  it.each([0, 1, 2, 3, 4, 5, 6])(
+    "accepts %s unique fixed numbers without a method",
+    (length) => {
+      const fixedNumbers = Array.from({ length }, (_, index) => index + 1);
+      expect(
+        GenerationRequestSchema.safeParse({ fixedNumbers, count: 1 }).success,
+      ).toBe(true);
+    },
+  );
 
-  it("rejects multiple combinations when all six numbers are fixed", () => {
+  it.each([[0], [46], [1.5], [2, 2], [1, 2, 3, 4, 5, 6, 7]])(
+    "rejects invalid fixed numbers %j",
+    (...fixedNumbers) => {
+      expect(GenerationRequestSchema.safeParse({ fixedNumbers }).success).toBe(
+        false,
+      );
+    },
+  );
+
+  it("requires exactly one combination when all six numbers are fixed", () => {
+    const fixedNumbers = [1, 2, 3, 4, 5, 6];
     expect(
-      GenerationRequestSchema.safeParse({
-        ...selectedRequest,
-        fixedNumbers: [1, 2, 3, 4, 5, 6],
-        count: 2,
-      }).success,
+      GenerationRequestSchema.safeParse({ fixedNumbers, count: 2 }).success,
     ).toBe(false);
+    expect(GenerationRequestSchema.safeParse({ fixedNumbers }).success).toBe(
+      false,
+    );
     expect(
-      GenerationRequestSchema.safeParse({
-        ...selectedRequest,
-        fixedNumbers: [1, 2, 3, 4, 5, 6],
-        count: 1,
-      }).success,
+      GenerationRequestSchema.safeParse({ fixedNumbers, count: 1 }).success,
     ).toBe(true);
   });
 
-  it("enforces method-specific fixed numbers and prompt limits", () => {
+  it("accepts an optional trimmed prompt up to 500 characters", () => {
+    expect(GenerationRequestSchema.parse({ prompt: " 홀수 3개 " }).prompt).toBe(
+      "홀수 3개",
+    );
     expect(
-      GenerationRequestSchema.safeParse({
-        method: "automatic",
-        fixedNumbers: [1],
-      }).success,
-    ).toBe(false);
-    expect(
-      GenerationRequestSchema.safeParse({ method: "selected" }).success,
-    ).toBe(false);
-    expect(
-      GenerationRequestSchema.safeParse({
-        method: "ai-assisted",
-        prompt: "x".repeat(501),
-      }).success,
-    ).toBe(false);
-    expect(
-      GenerationRequestSchema.safeParse({
-        method: "ai-assisted",
-        fixedNumbers: [7],
-        prompt: "홀수 3개",
-      }).success,
+      GenerationRequestSchema.safeParse({ prompt: "x".repeat(500) }).success,
     ).toBe(true);
+    expect(
+      GenerationRequestSchema.safeParse({ prompt: "x".repeat(501) }).success,
+    ).toBe(false);
   });
 
-  it("requires one to five fixed numbers for AI-assisted generation", () => {
-    expect(
-      GenerationRequestSchema.safeParse({ method: "ai-assisted" }).success,
-    ).toBe(false);
-    expect(
-      GenerationRequestSchema.safeParse({
-        method: "ai-assisted",
-        fixedNumbers: [1, 2, 3, 4, 5, 6],
-        count: 1,
-      }).success,
-    ).toBe(false);
-    expect(
-      GenerationRequestSchema.safeParse({
-        method: "ai-assisted",
-        fixedNumbers: [1, 2, 3, 4, 5],
-      }).success,
-    ).toBe(true);
+  it.each([1, 10])("accepts count %s", (count) => {
+    expect(GenerationRequestSchema.parse({ count }).count).toBe(count);
   });
 
   it.each([0, 11, 1.5])("rejects count %s", (count) => {
-    expect(
-      GenerationRequestSchema.safeParse({
-        method: "automatic",
-        count,
-      }).success,
-    ).toBe(false);
+    expect(GenerationRequestSchema.safeParse({ count }).success).toBe(false);
   });
 });

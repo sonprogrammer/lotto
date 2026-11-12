@@ -48,7 +48,6 @@ it("submits the default five combinations for the recent 30 draws", async () => 
     "/api/generation",
     expect.objectContaining({
       body: JSON.stringify({
-        method: "automatic",
         fixedNumbers: [],
         count: 5,
         period: { type: "recent", count: 30 },
@@ -66,10 +65,10 @@ it("submits the default five combinations for the recent 30 draws", async () => 
   ).toBeInTheDocument();
 });
 
-it("requires selected numbers and limits six fixed numbers to one combination", async () => {
+it("allows zero through six fixed numbers and limits six to one combination", async () => {
   renderDashboard();
-  await userEvent.click(screen.getByRole("radio", { name: "번호 직접 선택" }));
-  expect(screen.getByRole("button", { name: "조합 생성하기" })).toBeDisabled();
+  expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "조합 생성하기" })).toBeEnabled();
   for (const number of [1, 2, 3, 4, 5, 6]) {
     await userEvent.click(
       screen.getByRole("button", { name: `${number}번 고정` }),
@@ -83,9 +82,8 @@ it("requires selected numbers and limits six fixed numbers to one combination", 
   expect(screen.getByRole("button", { name: "조합 생성하기" })).toBeEnabled();
 });
 
-it("prevents selecting more fixed numbers than the method supports", async () => {
+it("prevents selecting more than six fixed numbers and allows deselection", async () => {
   renderDashboard();
-  await userEvent.click(screen.getByRole("radio", { name: "AI 추천 조합" }));
   expect(screen.getByRole("button", { name: "1번 고정" })).toHaveClass(
     "lotto-ball-gold",
   );
@@ -102,16 +100,44 @@ it("prevents selecting more fixed numbers than the method supports", async () =>
     "lotto-ball-green",
   );
   expect(
-    screen.getByText("고른 번호와 주신 의견을 함께 고려해 반영해요."),
+    screen.getByText(/의견을 남기지 않으면 기본 분석 프롬프트를 사용/),
   ).toBeInTheDocument();
-  for (const number of [1, 2, 3, 4, 5]) {
+  for (const number of [1, 2, 3, 4, 5, 6]) {
     await userEvent.click(
       screen.getByRole("button", { name: `${number}번 고정` }),
     );
   }
-  expect(screen.getByRole("button", { name: "6번 고정" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "7번 고정" })).toBeDisabled();
   await userEvent.click(screen.getByRole("button", { name: "1번 고정" }));
-  expect(screen.getByRole("button", { name: "6번 고정" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "7번 고정" })).toBeEnabled();
+});
+
+it("submits selected balls and a trimmed optional prompt in one request", async () => {
+  fetchMock.mockResolvedValue(
+    new Response(JSON.stringify(result), { status: 200 }),
+  );
+  renderDashboard();
+  await userEvent.click(screen.getByRole("button", { name: "9번 고정" }));
+  await userEvent.click(screen.getByRole("button", { name: "1번 고정" }));
+  await userEvent.type(
+    screen.getByRole("textbox", { name: /생성에 참고할 의견/ }),
+    " 홀수 3개 ",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "조합 생성하기" }));
+  expect(fetchMock).toHaveBeenCalledWith(
+    "/api/generation",
+    expect.objectContaining({
+      body: JSON.stringify({
+        fixedNumbers: [1, 9],
+        count: 5,
+        period: { type: "recent", count: 30 },
+        prompt: "홀수 3개",
+      }),
+    }),
+  );
+  expect(
+    await screen.findByRole("region", { name: "생성 결과" }),
+  ).toBeInTheDocument();
 });
 
 it("shows a loading skeleton and lets the user retry a failed request", async () => {

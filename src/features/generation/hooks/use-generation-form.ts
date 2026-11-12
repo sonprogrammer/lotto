@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { GenerationRequest } from "../model/generation-request";
 import { useGenerateCombinations } from "./use-generate-combinations";
 
-type Method = GenerationRequest["method"];
-
 export function useGenerationForm() {
-  const [method, setMethod] = useState<Method>("automatic");
   const [fixedNumbers, setFixedNumbers] = useState<number[]>([]);
   const [count, setCount] = useState(5);
   const [periodChoice, setPeriodChoice] = useState("recent:30");
@@ -16,29 +12,17 @@ export function useGenerationForm() {
   const generation = useGenerateCombinations();
   const customPeriodValid =
     /^[1-9]\d*$/.test(customCount) && Number.isSafeInteger(Number(customCount));
-  const fixedValid =
-    method === "automatic" ||
-    (method === "selected"
-      ? fixedNumbers.length > 0
-      : fixedNumbers.length > 0 && fixedNumbers.length <= 5);
   const countValid = fixedNumbers.length !== 6 || count === 1;
   const canSubmit =
     !generation.isPending &&
-    fixedValid &&
     countValid &&
     (periodChoice !== "custom" || customPeriodValid);
-
-  function changeMethod(next: Method) {
-    setMethod(next);
-    setFixedNumbers([]);
-    generation.reset();
-  }
 
   function toggleNumber(number: number) {
     setFixedNumbers((current) =>
       current.includes(number)
         ? current.filter((item) => item !== number)
-        : current.length < (method === "ai-assisted" ? 5 : 6)
+        : current.length < 6
           ? [...current, number].sort((left, right) => left - right)
           : current,
     );
@@ -76,7 +60,6 @@ export function useGenerationForm() {
                 : Number(periodChoice.split(":")[1]),
           };
     generation.mutate({
-      method,
       fixedNumbers,
       count,
       period,
@@ -90,7 +73,6 @@ export function useGenerationForm() {
   }
 
   return {
-    method,
     fixedNumbers,
     count,
     periodChoice,
@@ -98,10 +80,8 @@ export function useGenerationForm() {
     prompt,
     generation,
     customPeriodValid,
-    fixedValid,
     countValid,
     canSubmit,
-    changeMethod,
     toggleNumber,
     changeCount,
     changePeriodChoice,

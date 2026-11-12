@@ -17,7 +17,6 @@ function getNumberTone(number: number) {
 
 export function GenerationDashboard({ displayName }: Props) {
   const {
-    method,
     fixedNumbers,
     count,
     periodChoice,
@@ -25,10 +24,8 @@ export function GenerationDashboard({ displayName }: Props) {
     prompt,
     generation,
     customPeriodValid,
-    fixedValid,
     countValid,
     canSubmit,
-    changeMethod,
     toggleNumber,
     changeCount,
     changePeriodChoice,
@@ -51,89 +48,33 @@ export function GenerationDashboard({ displayName }: Props) {
         </p>
         <form className="generation-form" onSubmit={submit}>
           <fieldset className="generation-fieldset">
-            <legend>생성 방법</legend>
-            <div className="generation-methods">
-              {(
-                [
-                  ["automatic", "01", "자동 생성", "통계 기반 조합"],
-                  [
-                    "selected",
-                    "02",
-                    "번호 직접 선택",
-                    "고른 번호를 모든 조합에 넣어요.",
-                  ],
-                  [
-                    "ai-assisted",
-                    "AI",
-                    "AI 추천 조합",
-                    "고른 번호와 주신 의견을 함께 고려해 반영해요.",
-                  ],
-                ] as const
-              ).map(([value, marker, label, description]) => (
-                <label className="generation-method" key={value}>
-                  <input
-                    type="radio"
-                    name="method"
-                    value={value}
-                    aria-label={label}
-                    checked={method === value}
-                    onChange={() => changeMethod(value)}
-                  />
-                  <span className="generation-method-marker" aria-hidden="true">
-                    {marker}
-                  </span>
-                  <span className="generation-method-copy">
-                    <strong>{label}</strong>
-                    <span>{description}</span>
-                  </span>
-                  <span className="generation-method-check" aria-hidden="true">
-                    ✓
-                  </span>
-                </label>
-              ))}
+            <legend>
+              고정 번호 <span className="generation-hint">0~6개 선택</span>
+            </legend>
+            <p className="generation-helper">
+              선택한 번호는 생성된 모든 조합에 들어갑니다. 번호를 고르지 않아도
+              조합을 만들 수 있어요.
+            </p>
+            <div className="generation-picker">
+              {Array.from({ length: 45 }, (_, index) => index + 1).map(
+                (number) => (
+                  <button
+                    type="button"
+                    key={number}
+                    aria-label={`${number}번 고정`}
+                    aria-pressed={fixedNumbers.includes(number)}
+                    className={`generation-ball lotto-ball-${getNumberTone(number)}`}
+                    disabled={
+                      !fixedNumbers.includes(number) && fixedNumbers.length >= 6
+                    }
+                    onClick={() => toggleNumber(number)}
+                  >
+                    {number}
+                  </button>
+                ),
+              )}
             </div>
           </fieldset>
-          {method !== "automatic" && (
-            <fieldset className="generation-fieldset">
-              <legend>
-                고정 번호{" "}
-                <span className="generation-hint">
-                  {method === "ai-assisted" ? "1~5개" : "1~6개"} 선택
-                </span>
-              </legend>
-              <p className="generation-helper">
-                선택한 번호는 생성된 모든 조합에 들어갑니다.
-              </p>
-              <div className="generation-picker">
-                {Array.from({ length: 45 }, (_, index) => index + 1).map(
-                  (number) => (
-                    <button
-                      type="button"
-                      key={number}
-                      aria-label={`${number}번 고정`}
-                      aria-pressed={fixedNumbers.includes(number)}
-                      className={`generation-ball lotto-ball-${getNumberTone(number)}`}
-                      disabled={
-                        !fixedNumbers.includes(number) &&
-                        fixedNumbers.length >=
-                          (method === "ai-assisted" ? 5 : 6)
-                      }
-                      onClick={() => toggleNumber(number)}
-                    >
-                      {number}
-                    </button>
-                  ),
-                )}
-              </div>
-              {!fixedValid && (
-                <p className="generation-validation" role="alert">
-                  {method === "ai-assisted"
-                    ? "AI 추천에는 번호 1~5개를 선택해 주세요."
-                    : "번호를 1개 이상 선택해 주세요."}
-                </p>
-              )}
-            </fieldset>
-          )}
           <div className="generation-settings">
             <div className="generation-control">
               <label htmlFor="generation-count">생성 개수</label>
@@ -208,8 +149,8 @@ export function GenerationDashboard({ displayName }: Props) {
               rows={3}
             />
             <p className="generation-helper">
-              남겨주신 의견 중 반영할 수 있는 내용을 함께 고려합니다.{" "}
-              {prompt.length}/500자
+              남겨주신 의견 중 반영할 수 있는 내용을 함께 고려합니다. 의견을
+              남기지 않으면 기본 분석 프롬프트를 사용해요. {prompt.length}/500자
             </p>
           </div>
           <button
