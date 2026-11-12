@@ -7,7 +7,6 @@ export const SavedCombinationDocumentSchema = z.object({
   userId: z.string().regex(/^[a-f\d]{24}$/i),
   targetRound: z.number().int().positive(),
   numbers: LottoNumbersSchema,
-  generationMethod: z.enum(["automatic", "selected", "ai-assisted"]),
   analysisSummary: z.string().trim().min(1),
   createdAt: z.date(),
 });
