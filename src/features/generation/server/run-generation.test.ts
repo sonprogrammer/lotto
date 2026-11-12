@@ -110,6 +110,52 @@ it("applies parsed AI constraints in AI-assisted mode", async () => {
   });
 });
 
+it.each([
+  { method: "automatic" as const, fixedNumbers: [] },
+  { method: "selected" as const, fixedNumbers: [3] },
+])(
+  "applies custom prompt constraints in $method mode",
+  async ({ method, fixedNumbers }) => {
+    const result = await runGeneration({
+      method,
+      period,
+      fixedNumbers,
+      count: 1,
+      prompt: "44 제외",
+    });
+    expect(result.combinations[0].numbers).not.toContain(44);
+    expect(result.appliedConstraints).toEqual({
+      fixedNumbers,
+      excludedNumbers: [44],
+    });
+    expect(getGroqRecommendationMock).toHaveBeenCalledWith({
+      prompt: "44 제외",
+      fixedNumbers,
+      analysisSummary: analysis,
+    });
+  },
+);
+
+it.each([undefined, ""])(
+  "uses an explicit aggregate-statistics prompt for AI-assisted defaults %s",
+  async (prompt) => {
+    await runGeneration({
+      method: "ai-assisted",
+      period,
+      fixedNumbers: [3],
+      count: 1,
+      prompt,
+    });
+    expect(getGroqRecommendationMock.mock.calls[0][0]).toMatchObject({
+      fixedNumbers: [3],
+      analysisSummary: analysis,
+    });
+    expect(getGroqRecommendationMock.mock.calls[0][0].prompt).toMatch(
+      /집계 통계/,
+    );
+  },
+);
+
 it("rejects a period longer than available history", async () => {
   await expect(
     runGeneration({

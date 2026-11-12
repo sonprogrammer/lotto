@@ -16,6 +16,9 @@ import { getGroqRecommendation } from "./groq-recommendation";
 
 export class GenerationInputError extends Error {}
 
+const DEFAULT_AI_PROMPT =
+  "선택 번호와 집계 통계를 참고해 지원되는 조건을 추천해 주세요. 당첨 예측이나 확률 상승 주장은 하지 마세요.";
+
 export async function runGeneration(request: GenerationRequest) {
   const syncResult = await syncLotteryDraws();
   if (
@@ -36,14 +39,17 @@ export async function runGeneration(request: GenerationRequest) {
     request.period,
   );
 
-  // Groq only receives aggregate statistics and the explicit request preferences.
-  // Automatic and selected modes use its batch explanation, never its constraints.
+  // A custom prompt applies in any mode; otherwise only AI-assisted uses AI constraints.
+  const customPrompt = request.prompt?.trim();
+  const useAiConstraints =
+    request.method === "ai-assisted" || Boolean(customPrompt);
   let recommendation;
   try {
     recommendation = await getGroqRecommendation({
-      prompt: request.method === "ai-assisted" ? request.prompt : undefined,
-      fixedNumbers:
-        request.method === "ai-assisted" ? request.fixedNumbers : [],
+      prompt:
+        customPrompt ||
+        (request.method === "ai-assisted" ? DEFAULT_AI_PROMPT : undefined),
+      fixedNumbers: useAiConstraints ? request.fixedNumbers : [],
       analysisSummary: analysis,
     });
   } catch (error) {
@@ -56,8 +62,9 @@ export async function runGeneration(request: GenerationRequest) {
     throw error;
   }
 
-  const constraints: GenerationConstraints =
-    request.method === "ai-assisted" ? recommendation.constraints : {};
+  const constraints: GenerationConstraints = useAiConstraints
+    ? recommendation.constraints
+    : {};
   let combinations;
   const seed = crypto.randomUUID();
   try {
@@ -87,10 +94,9 @@ export async function runGeneration(request: GenerationRequest) {
     latestRound: syncResult.latestRound,
     period,
     appliedConstraints: { fixedNumbers: request.fixedNumbers, ...constraints },
-    unsupportedConditions:
-      request.method === "ai-assisted"
-        ? recommendation.unsupportedConditions
-        : [],
+    unsupportedConditions: useAiConstraints
+      ? recommendation.unsupportedConditions
+      : [],
     explanation: recommendation.explanation,
     seed,
   };

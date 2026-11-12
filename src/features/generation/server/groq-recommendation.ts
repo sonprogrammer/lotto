@@ -36,6 +36,21 @@ export type GroqRecommendation = {
   explanation: string;
 };
 
+export class GroqProviderError extends Error {
+  constructor(
+    public readonly kind:
+      | "rate-limit"
+      | "timeout"
+      | "invalid-response"
+      | "upstream"
+      | "configuration",
+    message: string,
+  ) {
+    super(message);
+    this.name = "GroqProviderError";
+  }
+}
+
 const nullableInteger = { anyOf: [{ type: "integer" }, { type: "null" }] };
 const nullableBoolean = { anyOf: [{ type: "boolean" }, { type: "null" }] };
 
@@ -81,7 +96,11 @@ export async function getGroqRecommendation({
   analysisSummary,
 }: GroqRecommendationInput): Promise<GroqRecommendation> {
   const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error("Groq API key is not configured");
+  if (!apiKey)
+    throw new GroqProviderError(
+      "configuration",
+      "Groq API key is not configured",
+    );
 
   let response: Response;
   let result: GroqRecommendation;
@@ -127,16 +146,22 @@ export async function getGroqRecommendation({
       "name" in error &&
       (error.name === "TimeoutError" || error.name === "AbortError")
     ) {
-      throw new Error("Groq request timed out; try again");
+      throw new GroqProviderError(
+        "timeout",
+        "Groq request timed out; try again",
+      );
     }
-    throw new Error("Groq request failed; try again");
+    throw new GroqProviderError("upstream", "Groq request failed; try again");
   }
 
   if (response.status === 429) {
-    throw new Error("Groq rate limit exceeded; try again later");
+    throw new GroqProviderError(
+      "rate-limit",
+      "Groq rate limit exceeded; try again later",
+    );
   }
   if (!response.ok) {
-    throw new Error("Groq request failed; try again");
+    throw new GroqProviderError("upstream", "Groq request failed; try again");
   }
 
   try {
@@ -169,7 +194,10 @@ export async function getGroqRecommendation({
       explanation: parsed.explanation,
     };
   } catch {
-    throw new Error("Invalid Groq recommendation");
+    throw new GroqProviderError(
+      "invalid-response",
+      "Invalid Groq recommendation",
+    );
   }
 
   validateFixedNumberCompatibility(result.constraints, fixedNumbers);

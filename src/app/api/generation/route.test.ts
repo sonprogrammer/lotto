@@ -20,6 +20,7 @@ vi.mock(
 
 import { POST } from "./route";
 import { GenerationInputError } from "@/features/generation/server/run-generation";
+import { GroqProviderError } from "@/features/generation/server/groq-recommendation";
 
 function request(body: unknown): Request {
   return new Request("http://localhost/api/generation", {
@@ -95,3 +96,19 @@ it("returns retryable upstream failures", async () => {
     retryable: true,
   });
 });
+
+it.each([
+  ["rate-limit", 429, "AI 사용 한도에 도달했어요. 잠시 후 다시 시도해 주세요."],
+  ["timeout", 504, "AI 응답 시간이 초과됐어요. 다시 시도해 주세요."],
+  ["invalid-response", 502, "AI 응답을 처리하지 못했어요. 다시 시도해 주세요."],
+] as const)(
+  "maps Groq %s to a retryable %s response",
+  async (kind, status, message) => {
+    runGenerationMock.mockRejectedValue(
+      new GroqProviderError(kind, "internal detail"),
+    );
+    const response = await POST(request({ method: "automatic" }));
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ error: message, retryable: true });
+  },
+);

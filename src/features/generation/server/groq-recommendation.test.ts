@@ -109,9 +109,10 @@ describe("getGroqRecommendation", () => {
       vi.fn().mockResolvedValue(new Response("server-secret", { status: 429 })),
     );
 
-    await expect(getGroqRecommendation(input)).rejects.toThrow(
-      "Groq rate limit exceeded; try again later",
-    );
+    await expect(getGroqRecommendation(input)).rejects.toMatchObject({
+      kind: "rate-limit",
+      message: "Groq rate limit exceeded; try again later",
+    });
   });
 
   it("reports a timeout without making another request", async () => {
@@ -120,10 +121,22 @@ describe("getGroqRecommendation", () => {
       .mockRejectedValue(new DOMException("timed out", "TimeoutError"));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(getGroqRecommendation(input)).rejects.toThrow(
-      "Groq request timed out; try again",
-    );
+    await expect(getGroqRecommendation(input)).rejects.toMatchObject({
+      kind: "timeout",
+      message: "Groq request timed out; try again",
+    });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("exposes a typed provider error for an invalid AI response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(groqResponse({ invalid: true })),
+    );
+    await expect(getGroqRecommendation(input)).rejects.toMatchObject({
+      kind: "invalid-response",
+      name: "GroqProviderError",
+    });
   });
 
   it.each([
