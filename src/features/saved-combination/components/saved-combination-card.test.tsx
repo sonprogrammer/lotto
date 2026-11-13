@@ -28,6 +28,20 @@ function renderCard(item: SavedCombination) {
 }
 
 describe("SavedCombinationCard results", () => {
+  it("explains that comparison begins after the latest draw at save time", () => {
+    renderCard(baseItem);
+
+    expect(
+      screen.getByRole("button", { name: "비교 시작 회차 안내" }),
+    ).toHaveAttribute(
+      "aria-describedby",
+      `comparison-start-help-${baseItem.id}`,
+    );
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "저장 시점의 최신 회차 다음부터 비교해요.",
+    );
+  });
+
   it("shows the latest winning round and prize in the card summary", () => {
     renderCard({
       ...baseItem,
