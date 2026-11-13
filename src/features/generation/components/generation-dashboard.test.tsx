@@ -101,6 +101,14 @@ it("uses the selected saved prompt content for generation", async () => {
   expect(request.prompt).toBe("홀짝을 3개씩 맞춰주세요.");
 });
 
+it("keeps prompt management out of the generation form", () => {
+  renderDashboard();
+
+  expect(
+    screen.queryByRole("button", { name: "프롬프트 관리" }),
+  ).not.toBeInTheDocument();
+});
+
 it("keeps a new opinion separate from any saved prompt", async () => {
   useSavedPromptsMock.mockReturnValue({
     data: [
@@ -134,14 +142,6 @@ it("keeps a new opinion separate from any saved prompt", async () => {
 
   const request = JSON.parse(fetchMock.mock.calls[0][1].body as string);
   expect(request.prompt).toBe("연속수는 피해주세요.");
-});
-
-it("keeps the prompt manager dialog outside the generation form", async () => {
-  renderDashboard();
-  await userEvent.click(screen.getByRole("button", { name: "프롬프트 관리" }));
-  const dialog = screen.getByRole("dialog", { name: "프롬프트 관리" });
-
-  expect(dialog.closest("form")).toBeNull();
 });
 
 it("keeps all controls locked until the pending generation settles", async () => {

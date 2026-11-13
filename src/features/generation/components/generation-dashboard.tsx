@@ -2,7 +2,6 @@
 
 import { SiteHeader } from "@/widgets/site-header";
 import { useSavedPrompts } from "@/features/saved-prompt/hooks/use-saved-prompts";
-import { SavedPromptManagerDialog } from "@/features/saved-prompt/components/saved-prompt-manager-dialog";
 import { useGenerationForm } from "../hooks/use-generation-form";
 import { GenerationResults } from "./generation-results";
 import { GenerationPromptControl } from "./generation-prompt-control";
@@ -30,7 +29,6 @@ export function GenerationDashboard({ displayName, userId }: Props) {
     prompt,
     promptMode,
     savedPromptId,
-    isPromptManagerOpen,
     generation,
     customPeriodValid,
     countValid,
@@ -42,15 +40,18 @@ export function GenerationDashboard({ displayName, userId }: Props) {
     changePrompt,
     changePromptMode,
     changeSavedPromptId,
-    openPromptManager,
-    closePromptManager,
     submit,
     retry,
   } = useGenerationForm(savedPrompts);
 
   return (
     <main className="analysis-shell">
-      <SiteHeader displayName={displayName} isConfigured isSignedIn />
+      <SiteHeader
+        displayName={displayName}
+        userId={userId}
+        isConfigured
+        isSignedIn
+      />
       <div className="analysis-content generation-content">
         <p className="analysis-eyebrow">LOTTO 6/45 · NUMBER STUDIO</p>
         <h1>나만의 번호 조합</h1>
@@ -169,7 +170,6 @@ export function GenerationDashboard({ displayName, userId }: Props) {
             onModeChange={changePromptMode}
             onPromptChange={changePrompt}
             onSavedPromptChange={changeSavedPromptId}
-            onManage={openPromptManager}
             onRetry={() => void savedPromptsQuery.refetch()}
           />
           <button
@@ -180,11 +180,6 @@ export function GenerationDashboard({ displayName, userId }: Props) {
             {generation.isPending ? "생성 중" : "조합 생성하기"}
           </button>
         </form>
-        <SavedPromptManagerDialog
-          open={isPromptManagerOpen}
-          userId={userId}
-          onClose={closePromptManager}
-        />
         {generation.isPending ? (
           <div
             className="generation-loading"

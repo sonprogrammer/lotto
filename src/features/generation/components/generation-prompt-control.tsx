@@ -12,7 +12,6 @@ type Props = {
   onModeChange: (mode: GenerationPromptMode) => void;
   onPromptChange: (value: string) => void;
   onSavedPromptChange: (id: string) => void;
-  onManage: () => void;
   onRetry: () => void;
 };
 
@@ -33,7 +32,6 @@ export function GenerationPromptControl({
   onModeChange,
   onPromptChange,
   onSavedPromptChange,
-  onManage,
   onRetry,
 }: Props) {
   return (
@@ -95,7 +93,7 @@ export function GenerationPromptControl({
             </select>
           ) : (
             <p className="generation-helper">
-              저장한 프롬프트가 없어요. 먼저 프롬프트를 추가해 주세요.
+              저장한 프롬프트가 없어요. 상단 프롬프트 설정에서 추가해 주세요.
             </p>
           )}
         </div>
@@ -115,19 +113,9 @@ export function GenerationPromptControl({
           <p className="generation-helper">{prompt.length}/500자</p>
         </div>
       )}
-      <div className="generation-prompt-footer">
-        <p className="generation-helper">
-          의견은 통계와 함께 고려해 추천해요. 당첨을 예측하지는 않아요.
-        </p>
-        <button
-          type="button"
-          className="generation-prompt-manage"
-          disabled={disabled}
-          onClick={onManage}
-        >
-          프롬프트 관리
-        </button>
-      </div>
+      <p className="generation-helper">
+        의견은 통계와 함께 고려해 추천해요. 당첨을 예측하지는 않아요.
+      </p>
     </fieldset>
   );
 }

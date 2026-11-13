@@ -32,7 +32,10 @@ function renderDashboard() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <AnalysisDashboard displayName="손영진" />
+      <AnalysisDashboard
+        displayName="손영진"
+        userId="65ab12cd34ef56ab78cd90ef"
+      />
     </QueryClientProvider>,
   );
 }

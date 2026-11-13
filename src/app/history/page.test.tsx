@@ -28,7 +28,7 @@ beforeEach(() => {
 
 it("protects history for signed-in users and passes the profile name", async () => {
   expect(await HistoryPage()).toMatchObject({
-    props: { displayName: "손영진" },
+    props: { displayName: "손영진", userId: "user-1" },
   });
 });
 

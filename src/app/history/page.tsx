@@ -13,5 +13,10 @@ export default async function HistoryPage() {
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/");
 
-  return <LotteryDrawHistory displayName={currentUser.nickname ?? undefined} />;
+  return (
+    <LotteryDrawHistory
+      displayName={currentUser.nickname ?? undefined}
+      userId={currentUser.userId}
+    />
+  );
 }

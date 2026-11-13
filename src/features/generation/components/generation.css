@@ -215,7 +215,6 @@
   background: #f5f8fc;
 }
 .generation-prompt-modes button,
-.generation-prompt-manage,
 .generation-prompt-error button {
   min-height: 40px;
   border: 0;
@@ -243,23 +242,6 @@
 }
 .generation-prompt-selection {
   margin-top: 16px;
-}
-.generation-prompt-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.generation-prompt-manage {
-  flex: none;
-  min-height: 36px;
-  border: 1px solid #dce5ef;
-  background: #fff;
-  color: #354a64;
-}
-.generation-prompt-manage:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 .generation-prompt-error {
   display: flex;
@@ -443,10 +425,6 @@
     grid-template-columns: 1fr;
   }
   .generation-results-head {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .generation-prompt-footer {
     align-items: flex-start;
     flex-direction: column;
   }

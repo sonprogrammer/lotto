@@ -10,6 +10,7 @@ const ROLLING_INTERVAL_MS = 90;
 
 type LottoNumberPreviewProps = {
   displayName?: string;
+  userId?: string;
   isConfigured?: boolean;
   isSignedIn?: boolean;
 };
@@ -24,6 +25,7 @@ function getBallColor(number: number | undefined) {
 
 export function LottoNumberPreview({
   displayName,
+  userId,
   isConfigured = false,
   isSignedIn = false,
 }: LottoNumberPreviewProps) {
@@ -87,6 +89,7 @@ export function LottoNumberPreview({
 
       <SiteHeader
         displayName={displayName}
+        userId={userId}
         isConfigured={isConfigured}
         isSignedIn={isSignedIn}
       />

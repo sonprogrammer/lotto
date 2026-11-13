@@ -10,6 +10,7 @@ import { FrequencyGapHelp } from "./frequency-gap-help";
 
 type AnalysisDashboardProps = {
   displayName?: string;
+  userId: string;
 };
 
 function getNumberTone(number: number) {
@@ -20,7 +21,10 @@ function getNumberTone(number: number) {
   return "green";
 }
 
-export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
+export function AnalysisDashboard({
+  displayName,
+  userId,
+}: AnalysisDashboardProps) {
   const [period, setPeriod] = useState<AnalysisPeriod>({
     type: "recent",
     count: 30,
@@ -62,7 +66,12 @@ export function AnalysisDashboard({ displayName }: AnalysisDashboardProps) {
 
   return (
     <main className="analysis-shell">
-      <SiteHeader displayName={displayName} isConfigured isSignedIn />
+      <SiteHeader
+        displayName={displayName}
+        userId={userId}
+        isConfigured
+        isSignedIn
+      />
       <section className="analysis-content" aria-labelledby="analysis-title">
         <p className="analysis-eyebrow">LOTTO 6/45 · 데이터 기반 분석</p>
         <h1 id="analysis-title">이번 주 분석</h1>

@@ -104,6 +104,7 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
     <dialog
       ref={dialogRef}
       className="saved-prompt-dialog"
+      id="saved-prompt-dialog"
       aria-labelledby="saved-prompt-dialog-title"
       onCancel={(event) => {
         event.preventDefault();
@@ -113,13 +114,13 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
       <div className="saved-prompt-dialog-header">
         <div>
           <p className="saved-prompt-dialog-eyebrow">MY PROMPTS</p>
-          <h2 id="saved-prompt-dialog-title">프롬프트 관리</h2>
+          <h2 id="saved-prompt-dialog-title">프롬프트 설정</h2>
           <p>자주 쓰는 의견을 저장해 다음 생성 때 다시 사용할 수 있어요.</p>
         </div>
         <button
           className="saved-prompt-dialog-close"
           type="button"
-          aria-label="프롬프트 관리 닫기"
+          aria-label="프롬프트 설정 닫기"
           disabled={isBusy}
           onClick={close}
         >

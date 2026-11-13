@@ -82,7 +82,7 @@ beforeEach(() => {
 it("creates, edits, and deletes a prompt while keeping the list synchronized", async () => {
   const user = userEvent.setup();
   renderDialog();
-  const dialog = await screen.findByRole("dialog", { name: "프롬프트 관리" });
+  const dialog = await screen.findByRole("dialog", { name: "프롬프트 설정" });
 
   await user.click(
     await within(dialog).findByRole("button", { name: "첫 프롬프트 추가" }),
@@ -136,7 +136,7 @@ it("shows the five-prompt capacity and disables another prompt", async () => {
     updatedAt: "2026-11-08T00:00:00.000Z",
   }));
   renderDialog();
-  const dialog = await screen.findByRole("dialog", { name: "프롬프트 관리" });
+  const dialog = await screen.findByRole("dialog", { name: "프롬프트 설정" });
 
   expect(await within(dialog).findByText("5 / 5개 저장됨")).toBeInTheDocument();
   expect(
@@ -147,7 +147,7 @@ it("shows the five-prompt capacity and disables another prompt", async () => {
 it("shows an inline validation error and does not send overlong content", async () => {
   const user = userEvent.setup();
   renderDialog();
-  const dialog = await screen.findByRole("dialog", { name: "프롬프트 관리" });
+  const dialog = await screen.findByRole("dialog", { name: "프롬프트 설정" });
   await user.click(
     await within(dialog).findByRole("button", { name: "첫 프롬프트 추가" }),
   );
@@ -172,7 +172,7 @@ it("shows a load error and lets the user retry", async () => {
     .mockImplementationOnce(async () => jsonResponse([]));
   const user = userEvent.setup();
   renderDialog();
-  const dialog = await screen.findByRole("dialog", { name: "프롬프트 관리" });
+  const dialog = await screen.findByRole("dialog", { name: "프롬프트 설정" });
   expect(await within(dialog).findByRole("alert")).toHaveTextContent(
     "저장 프롬프트를 불러오지 못했어요.",
   );
@@ -194,7 +194,7 @@ it("shows a loading status until the prompt list arrives", async () => {
     }),
   );
   renderDialog();
-  const dialog = await screen.findByRole("dialog", { name: "프롬프트 관리" });
+  const dialog = await screen.findByRole("dialog", { name: "프롬프트 설정" });
   expect(within(dialog).getByRole("status")).toHaveTextContent(
     "저장 프롬프트를 불러오는 중이에요.",
   );
@@ -218,7 +218,7 @@ it("opens as a modal dialog and closes on Escape", async () => {
     wrapper: Wrapper,
   });
 
-  const dialog = await screen.findByRole("dialog", { name: "프롬프트 관리" });
+  const dialog = await screen.findByRole("dialog", { name: "프롬프트 설정" });
   expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
   fireEvent(dialog, new Event("cancel", { cancelable: true }));
   await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -235,7 +235,7 @@ it("closes the native modal when the parent closes it", async () => {
     <SavedPromptManagerDialog open userId={userId} onClose={vi.fn()} />,
     { wrapper: Wrapper },
   );
-  await screen.findByRole("dialog", { name: "프롬프트 관리" });
+  await screen.findByRole("dialog", { name: "프롬프트 설정" });
 
   view.rerender(
     <QueryClientProvider client={queryClient}>

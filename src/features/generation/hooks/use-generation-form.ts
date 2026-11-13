@@ -14,7 +14,6 @@ export function useGenerationForm(savedPrompts: SavedPrompt[] = []) {
   const [prompt, setPrompt] = useState("");
   const [promptMode, setPromptMode] = useState<GenerationPromptMode>("default");
   const [savedPromptId, setSavedPromptId] = useState("");
-  const [isPromptManagerOpen, setPromptManagerOpen] = useState(false);
   const generation = useGenerateCombinations();
   const selectedSavedPrompt = savedPrompts.find(
     (savedPrompt) => savedPrompt.id === savedPromptId,
@@ -73,13 +72,6 @@ export function useGenerationForm(savedPrompts: SavedPrompt[] = []) {
     setSavedPromptId(value);
     generation.reset();
   }
-  function openPromptManager() {
-    setPromptManagerOpen(true);
-  }
-  function closePromptManager() {
-    setPromptManagerOpen(false);
-  }
-
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
@@ -121,7 +113,6 @@ export function useGenerationForm(savedPrompts: SavedPrompt[] = []) {
     prompt,
     promptMode: activePromptMode,
     savedPromptId: activeSavedPromptId,
-    isPromptManagerOpen,
     generation,
     customPeriodValid,
     countValid,
@@ -133,8 +124,6 @@ export function useGenerationForm(savedPrompts: SavedPrompt[] = []) {
     changePrompt,
     changePromptMode,
     changeSavedPromptId,
-    openPromptManager,
-    closePromptManager,
     submit,
     retry,
   };
