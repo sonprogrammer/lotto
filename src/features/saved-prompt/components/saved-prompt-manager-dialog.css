@@ -195,7 +195,6 @@
   font-size: 13px;
 }
 .saved-prompt-form textarea {
-  resize: none;
   line-height: 1.6;
 }
 .saved-prompt-form [aria-invalid="true"] {
@@ -232,10 +231,6 @@
   margin-top: 18px;
   border-top: 1px solid #e7edf3;
   padding-top: 14px;
-}
-.saved-prompt-dialog :is(button, input, textarea):focus-visible {
-  outline: 2px solid #86b8ed;
-  outline-offset: 0;
 }
 @keyframes saved-prompt-panel-enter {
   from {

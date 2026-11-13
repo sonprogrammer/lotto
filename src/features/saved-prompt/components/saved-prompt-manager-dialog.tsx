@@ -11,6 +11,9 @@ import {
 } from "../hooks";
 import "./saved-prompt-manager-dialog.css";
 
+const focusRingClasses =
+  "focus-visible:outline-2 focus-visible:outline-[#86b8ed] focus-visible:outline-offset-0";
+
 type Props = {
   open: boolean;
   userId: string;
@@ -118,7 +121,7 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
           <p>자주 쓰는 의견을 저장해 다음 생성 때 다시 사용할 수 있어요.</p>
         </div>
         <button
-          className="saved-prompt-dialog-close"
+          className={`saved-prompt-dialog-close ${focusRingClasses}`}
           type="button"
           aria-label="프롬프트 설정 닫기"
           disabled={isBusy}
@@ -139,7 +142,11 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
       ) : promptsQuery.isError ? (
         <div className="saved-prompt-dialog-error" role="alert">
           <p>저장 프롬프트를 불러오지 못했어요.</p>
-          <button type="button" onClick={() => void promptsQuery.refetch()}>
+          <button
+            className={focusRingClasses}
+            type="button"
+            onClick={() => void promptsQuery.refetch()}
+          >
             다시 불러오기
           </button>
         </div>
@@ -147,7 +154,11 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
         <div className="saved-prompt-empty">
           <p>아직 저장한 프롬프트가 없어요.</p>
           <span>원하는 분석 의견을 저장해두고 조합 생성 때 사용해 보세요.</span>
-          <button type="button" onClick={startCreate}>
+          <button
+            className={focusRingClasses}
+            type="button"
+            onClick={startCreate}
+          >
             첫 프롬프트 추가
           </button>
         </div>
@@ -161,6 +172,7 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
               </div>
               <div className="saved-prompt-list-actions">
                 <button
+                  className={focusRingClasses}
                   type="button"
                   aria-label={`수정: ${prompt.title}`}
                   disabled={isBusy}
@@ -169,6 +181,7 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
                   수정
                 </button>
                 <button
+                  className={focusRingClasses}
                   type="button"
                   aria-label={`삭제: ${prompt.title}`}
                   disabled={isBusy}
@@ -181,6 +194,7 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
                 <div className="saved-prompt-delete-confirm" role="group">
                   <span>이 프롬프트를 삭제할까요?</span>
                   <button
+                    className={focusRingClasses}
                     type="button"
                     disabled={deletePrompt.isPending}
                     onClick={() => setDeletingPromptId(null)}
@@ -188,6 +202,7 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
                     취소
                   </button>
                   <button
+                    className={focusRingClasses}
                     type="button"
                     aria-label={`삭제 확인: ${prompt.title}`}
                     disabled={deletePrompt.isPending}
@@ -217,6 +232,7 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
           <h3>{editingPrompt ? "프롬프트 수정" : "새 프롬프트"}</h3>
           <label htmlFor="saved-prompt-title">제목</label>
           <input
+            className={focusRingClasses}
             id="saved-prompt-title"
             autoFocus
             disabled={isSaving}
@@ -241,6 +257,7 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
           </span>
           <label htmlFor="saved-prompt-content">내용</label>
           <textarea
+            className={`resize-none ${focusRingClasses}`}
             id="saved-prompt-content"
             disabled={isSaving}
             value={content}
@@ -264,10 +281,19 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
             {content.length}/300자
           </span>
           <div className="saved-prompt-form-actions">
-            <button type="button" disabled={isSaving} onClick={resetForm}>
+            <button
+              className={focusRingClasses}
+              type="button"
+              disabled={isSaving}
+              onClick={resetForm}
+            >
               취소
             </button>
-            <button type="submit" disabled={isSaving}>
+            <button
+              className={focusRingClasses}
+              type="submit"
+              disabled={isSaving}
+            >
               {isSaving ? "저장 중" : editingPrompt ? "수정 저장" : "저장하기"}
             </button>
           </div>
@@ -277,6 +303,7 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
       <div className="saved-prompt-dialog-footer">
         {prompts.length > 0 && !formOpen && (
           <button
+            className={focusRingClasses}
             type="button"
             disabled={prompts.length >= 5 || promptsQuery.isPending}
             onClick={startCreate}
@@ -284,7 +311,12 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
             새 프롬프트 추가
           </button>
         )}
-        <button type="button" disabled={isBusy} onClick={close}>
+        <button
+          className={focusRingClasses}
+          type="button"
+          disabled={isBusy}
+          onClick={close}
+        >
           닫기
         </button>
       </div>

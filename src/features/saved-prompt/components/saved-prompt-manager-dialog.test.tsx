@@ -79,6 +79,25 @@ beforeEach(() => {
   });
 });
 
+it("uses Tailwind utilities for textarea resize and focus styling", async () => {
+  renderDialog();
+
+  await userEvent.click(
+    await screen.findByRole(
+      "button",
+      { name: "첫 프롬프트 추가" },
+      { timeout: 5000 },
+    ),
+  );
+
+  expect(screen.getByLabelText("내용")).toHaveClass(
+    "resize-none",
+    "focus-visible:outline-2",
+    "focus-visible:outline-offset-0",
+    "focus-visible:outline-[#86b8ed]",
+  );
+});
+
 it("creates, edits, and deletes a prompt while keeping the list synchronized", async () => {
   const user = userEvent.setup();
   renderDialog();
