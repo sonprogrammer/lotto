@@ -8,14 +8,14 @@ type Props = { userId: string; displayName?: string };
 
 export function SavedCombinationsDashboard({ userId, displayName }: Props) {
   return (
-    <main className="flex min-h-dvh flex-col items-center bg-slate-50 text-slate-950 lg:h-dvh lg:min-h-[40rem] lg:overflow-hidden">
+    <main className="flex min-h-dvh flex-col items-center bg-slate-50 pt-7 text-slate-950 lg:h-dvh lg:min-h-[40rem] lg:overflow-hidden">
       <SiteHeader
         displayName={displayName}
         userId={userId}
         isConfigured
         isSignedIn
       />
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-5 py-5 sm:px-8 lg:min-h-0 lg:py-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-5 pb-5 pt-[58px] sm:px-8 lg:min-h-0 lg:pb-6 lg:pt-[58px]">
         <header className="shrink-0">
           <p className="text-xs font-semibold tracking-[0.2em] text-blue-700">
             MY LOTTO
