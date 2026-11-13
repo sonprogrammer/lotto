@@ -12,6 +12,7 @@ type Props = {
   onSelect: (id: string) => void;
   onSave: (id: string, numbers: number[]) => Promise<boolean>;
   onDelete: (id: string) => void;
+  highlighted?: boolean;
 };
 
 export function SavedCombinationCard({
@@ -21,6 +22,7 @@ export function SavedCombinationCard({
   onSelect,
   onSave,
   onDelete,
+  highlighted = false,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [numbers, setNumbers] = useState<number[]>(item.numbers);
@@ -40,7 +42,10 @@ export function SavedCombinationCard({
     null,
   );
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4">
+    <article
+      id={`saved-combination-${item.id}`}
+      className={`rounded-2xl border p-3.5 shadow-sm transition sm:p-4 ${highlighted ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 bg-white"}`}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5 text-sm font-semibold">
           <label className="flex min-w-0 items-center gap-2.5">

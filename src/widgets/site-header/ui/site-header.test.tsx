@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import { SiteHeader } from "./site-header";
+import { QueryProvider } from "@/shared/providers/query-provider";
 
 const { managerMock } = vi.hoisted(() => ({ managerMock: vi.fn() }));
 vi.mock(
@@ -19,12 +20,14 @@ vi.mock("@/features/auth/components/auth-control", () => ({
 
 it("opens private prompt settings from the signed-in navigation", () => {
   render(
-    <SiteHeader
-      displayName="손영진"
-      userId="65ab12cd34ef56ab78cd90ef"
-      isConfigured
-      isSignedIn
-    />,
+    <QueryProvider>
+      <SiteHeader
+        displayName="손영진"
+        userId="65ab12cd34ef56ab78cd90ef"
+        isConfigured
+        isSignedIn
+      />
+    </QueryProvider>,
   );
 
   fireEvent.click(screen.getByRole("button", { name: "프롬프트 설정" }));
@@ -39,7 +42,11 @@ it("opens private prompt settings from the signed-in navigation", () => {
 });
 
 it("does not show prompt settings to signed-out visitors", () => {
-  render(<SiteHeader isConfigured={false} isSignedIn={false} />);
+  render(
+    <QueryProvider>
+      <SiteHeader isConfigured={false} isSignedIn={false} />
+    </QueryProvider>,
+  );
 
   expect(
     screen.queryByRole("button", { name: "프롬프트 설정" }),
