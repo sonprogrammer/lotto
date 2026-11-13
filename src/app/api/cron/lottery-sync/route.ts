@@ -1,9 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
-import {
-  LOTTERY_DRAW_HISTORY_CACHE_TAG,
-  runLotteryDrawSync,
-} from "@/entities/lottery-draw";
+import { LOTTERY_DRAW_HISTORY_CACHE_TAG } from "@/entities/lottery-draw";
+import { syncAndReconcileSavedCombinationDrawResults } from "@/entities/saved-combination";
 import { WEEKLY_ANALYSIS_CACHE_TAG } from "@/features/analysis";
 
 export async function GET(request: Request) {
@@ -13,7 +11,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await runLotteryDrawSync({ maxAttempts: 3 });
+    const result = await syncAndReconcileSavedCombinationDrawResults({
+      maxAttempts: 3,
+    });
     if (result.changed) {
       revalidateTag(WEEKLY_ANALYSIS_CACHE_TAG, { expire: 0 });
       revalidateTag(LOTTERY_DRAW_HISTORY_CACHE_TAG, { expire: 0 });

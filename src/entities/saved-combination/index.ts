@@ -10,3 +10,4 @@ export {
   SAVED_COMBINATIONS_PAGE_SIZE,
   type SavedCombinationsPage,
 } from "./model/page";
+export { syncAndReconcileSavedCombinationDrawResults } from "./server/sync-and-reconcile-draw-results";

@@ -1,11 +1,11 @@
 import { ObjectId } from "mongodb";
-import { runLotteryDrawSync } from "@/entities/lottery-draw";
 import { getMongoDb } from "@/shared/server/mongodb/client";
 import type { SavedCombination } from "../model/combination";
 import type { SavedCombinationsPage } from "../model/page";
 import type { SavedCombinationDocument } from "../model/document";
 import type { SavedCombinationCreate } from "../model/input";
 import { serializeSavedCombination } from "./serialize-combination";
+import { syncAndReconcileSavedCombinationDrawResults } from "./sync-and-reconcile-draw-results";
 
 export class SavedCombinationNotFoundError extends Error {}
 
@@ -45,7 +45,8 @@ export async function createSavedCombination(
   input: SavedCombinationCreate,
 ) {
   const collection = await getCollection();
-  const { latestRound: round } = await runLotteryDrawSync({ maxAttempts: 1 });
+  const { latestRound: round } =
+    await syncAndReconcileSavedCombinationDrawResults({ maxAttempts: 1 });
   const now = new Date();
   const common = {
     _id: new ObjectId(),
@@ -79,7 +80,8 @@ export async function updateSavedCombination(
   const collection = await getCollection();
   const existing = await collection.findOne({ _id: new ObjectId(id), userId });
   if (!existing) throw new SavedCombinationNotFoundError();
-  const { latestRound: round } = await runLotteryDrawSync({ maxAttempts: 1 });
+  const { latestRound: round } =
+    await syncAndReconcileSavedCombinationDrawResults({ maxAttempts: 1 });
   const numberVersions = [...existing.numberVersions];
   if (round >= existing.trackingStartRound)
     numberVersions.push({

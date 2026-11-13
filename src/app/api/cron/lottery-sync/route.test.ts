@@ -8,7 +8,9 @@ const { runSyncMock, revalidateTagMock } = vi.hoisted(() => ({
 vi.mock("next/cache", () => ({ revalidateTag: revalidateTagMock }));
 vi.mock("@/entities/lottery-draw", () => ({
   LOTTERY_DRAW_HISTORY_CACHE_TAG: "lottery-draw-history",
-  runLotteryDrawSync: runSyncMock,
+}));
+vi.mock("@/entities/saved-combination", () => ({
+  syncAndReconcileSavedCombinationDrawResults: runSyncMock,
 }));
 vi.mock("@/features/analysis", () => ({
   WEEKLY_ANALYSIS_CACHE_TAG: "weekly-analysis",

@@ -1,8 +1,6 @@
 import { revalidateTag } from "next/cache";
-import {
-  LOTTERY_DRAW_HISTORY_CACHE_TAG,
-  runLotteryDrawSync,
-} from "@/entities/lottery-draw";
+import { LOTTERY_DRAW_HISTORY_CACHE_TAG } from "@/entities/lottery-draw";
+import { syncAndReconcileSavedCombinationDrawResults } from "@/entities/saved-combination";
 import {
   getCachedWeeklyAnalysis,
   WEEKLY_ANALYSIS_CACHE_TAG,
@@ -21,7 +19,9 @@ const DEFAULT_AI_PROMPT =
   "선택 번호와 집계 통계를 참고해 지원되는 조건을 추천해 주세요. 당첨 예측이나 확률 상승 주장은 하지 마세요.";
 
 export async function runGeneration(request: GenerationRequest) {
-  const syncResult = await runLotteryDrawSync({ maxAttempts: 1 });
+  const syncResult = await syncAndReconcileSavedCombinationDrawResults({
+    maxAttempts: 1,
+  });
   if (
     request.period.type === "recent" &&
     request.period.count > syncResult.drawCount
