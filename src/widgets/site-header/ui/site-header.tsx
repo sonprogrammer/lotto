@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { AuthControl } from "@/features/auth/components/auth-control";
 import { SavedPromptManagerDialog } from "@/features/saved-prompt/components/saved-prompt-manager-dialog";
+import { NotificationBell } from "@/features/notification/components/notification-bell";
+import { PushPermissionPrompt } from "@/features/notification/components/push-permission-prompt";
 
 type SiteHeaderProps = {
   displayName?: string;
@@ -43,6 +45,7 @@ export function SiteHeader({
             <Link className="analysis-link" href="/saved">
               저장한 번호
             </Link>
+            {userId && <NotificationBell userId={userId} />}
             {userId && (
               <button
                 className="analysis-link site-navigation-button"
@@ -69,6 +72,7 @@ export function SiteHeader({
           onClose={() => setPromptSettingsOpen(false)}
         />
       )}
+      <PushPermissionPrompt isSignedIn={isSignedIn} />
     </>
   );
 }

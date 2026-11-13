@@ -4,9 +4,19 @@ import { SiteHeader } from "@/widgets/site-header";
 import { ManualCombinationForm } from "./manual-combination-form";
 import { SavedCombinationsPanel } from "./saved-combinations-panel";
 
-type Props = { userId: string; displayName?: string };
+type Props = {
+  userId: string;
+  displayName?: string;
+  initialPage?: number;
+  targetCombinationId?: string;
+};
 
-export function SavedCombinationsDashboard({ userId, displayName }: Props) {
+export function SavedCombinationsDashboard({
+  userId,
+  displayName,
+  initialPage,
+  targetCombinationId,
+}: Props) {
   return (
     <main className="flex min-h-dvh flex-col items-center bg-slate-50 pt-7 text-slate-950 lg:h-dvh lg:min-h-[40rem] lg:overflow-hidden">
       <SiteHeader
@@ -29,7 +39,11 @@ export function SavedCombinationsDashboard({ userId, displayName }: Props) {
         </header>
         <div className="grid items-start gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(21rem,0.9fr)_minmax(0,1.1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-6 lg:overflow-hidden xl:gap-8">
           <ManualCombinationForm userId={userId} />
-          <SavedCombinationsPanel userId={userId} />
+          <SavedCombinationsPanel
+            userId={userId}
+            initialPage={initialPage}
+            targetCombinationId={targetCombinationId}
+          />
         </div>
       </div>
     </main>

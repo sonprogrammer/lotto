@@ -1,8 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { runLotteryDrawSyncMock, reconcileMock } = vi.hoisted(() => ({
+const {
+  runLotteryDrawSyncMock,
+  reconcileMock,
+  reconcileNotificationsMock,
+  sendPushMock,
+} = vi.hoisted(() => ({
   runLotteryDrawSyncMock: vi.fn(),
   reconcileMock: vi.fn(),
+  reconcileNotificationsMock: vi.fn(),
+  sendPushMock: vi.fn(),
 }));
 
 vi.mock("@/entities/lottery-draw", () => ({
@@ -10,6 +17,12 @@ vi.mock("@/entities/lottery-draw", () => ({
 }));
 vi.mock("./reconcile-draw-results", () => ({
   reconcileSavedCombinationDrawResults: reconcileMock,
+}));
+vi.mock("@/entities/notification/server/reconcile-draw-notifications", () => ({
+  reconcileDrawNotifications: reconcileNotificationsMock,
+}));
+vi.mock("@/entities/notification/server/send-pending-push-deliveries", () => ({
+  sendPendingPushDeliveries: sendPushMock,
 }));
 
 import { syncAndReconcileSavedCombinationDrawResults } from "./sync-and-reconcile-draw-results";
@@ -25,6 +38,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   runLotteryDrawSyncMock.mockResolvedValue(syncResult);
   reconcileMock.mockResolvedValue({ updatedCount: 2 });
+  reconcileNotificationsMock.mockResolvedValue({
+    createdCount: 1,
+    updatedCount: 0,
+  });
+  sendPushMock.mockResolvedValue({ sentCount: 1, failedCount: 0 });
 });
 
 describe("syncAndReconcileSavedCombinationDrawResults", () => {
@@ -35,6 +53,10 @@ describe("syncAndReconcileSavedCombinationDrawResults", () => {
 
     expect(runLotteryDrawSyncMock).toHaveBeenCalledWith({ maxAttempts: 3 });
     expect(reconcileMock).toHaveBeenCalledWith({ historyChanged: true });
+    expect(reconcileNotificationsMock).toHaveBeenCalledWith({
+      latestRound: 100,
+    });
+    expect(sendPushMock).toHaveBeenCalledOnce();
   });
 
   it("skips reconciliation when sync fails", async () => {
@@ -44,5 +66,14 @@ describe("syncAndReconcileSavedCombinationDrawResults", () => {
       syncAndReconcileSavedCombinationDrawResults({ maxAttempts: 1 }),
     ).rejects.toThrow("sync failed");
     expect(reconcileMock).not.toHaveBeenCalled();
+  });
+
+  it("does not block the result sync when notification processing fails", async () => {
+    reconcileNotificationsMock.mockRejectedValue(
+      new Error("notifications unavailable"),
+    );
+    await expect(
+      syncAndReconcileSavedCombinationDrawResults({ maxAttempts: 1 }),
+    ).resolves.toEqual(syncResult);
   });
 });

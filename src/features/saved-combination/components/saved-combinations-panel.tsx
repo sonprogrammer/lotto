@@ -1,20 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConfirmationDialog } from "@/shared/ui/confirmation-dialog";
+import type { SavedCombination } from "@/entities/saved-combination/model/combination";
 import { useManageSavedCombinations } from "../hooks/use-manage-saved-combinations";
 import { useSavedCombinations } from "../hooks/use-saved-combinations";
 import { SavedCombinationCard } from "./saved-combination-card";
 import { SavedCombinationPagination } from "./saved-combination-pagination";
 
-type Props = { userId: string };
+type Props = {
+  userId: string;
+  initialPage?: number;
+  targetCombinationId?: string;
+};
 type DeleteTarget =
   | { type: "one"; id: string }
   | { type: "selected"; ids: string[] }
   | { type: "all"; count: number };
 
-export function SavedCombinationsPanel({ userId }: Props) {
-  const [page, setPage] = useState(1);
+const EMPTY_ITEMS: SavedCombination[] = [];
+
+export function SavedCombinationsPanel({
+  userId,
+  initialPage = 1,
+  targetCombinationId,
+}: Props) {
+  const [page, setPage] = useState(initialPage);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [deleteError, setDeleteError] = useState("");
@@ -22,12 +33,23 @@ export function SavedCombinationsPanel({ userId }: Props) {
   const query = useSavedCombinations(userId, page);
   const manage = useManageSavedCombinations(userId);
   const data = query.data;
-  const items = data?.items ?? [];
+  const items = data?.items ?? EMPTY_ITEMS;
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
   const totalLabel = data ? total : query.isPending ? "…" : "—";
   const isDeleting = manage.remove.isPending || manage.removeMany.isPending;
   const busy = manage.update.isPending || isDeleting;
+
+  useEffect(() => {
+    if (
+      !targetCombinationId ||
+      !items.some((item) => item.id === targetCombinationId)
+    )
+      return;
+    document
+      .getElementById(`saved-combination-${targetCombinationId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [items, targetCombinationId]);
 
   const run = async (action: () => Promise<unknown>) => {
     setError("");
@@ -189,6 +211,7 @@ export function SavedCombinationsPanel({ userId }: Props) {
                     setDeleteError("");
                     setDeleteTarget({ type: "one", id });
                   }}
+                  highlighted={item.id === targetCombinationId}
                 />
               ))}
             </div>

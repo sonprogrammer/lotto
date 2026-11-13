@@ -1,6 +1,15 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LottoNumberPreview } from "./lotto-number-preview";
+import { QueryProvider } from "@/shared/providers/query-provider";
+
+function renderPreview() {
+  return render(
+    <QueryProvider>
+      <LottoNumberPreview />
+    </QueryProvider>,
+  );
+}
 
 const { generateLottoNumbersMock } = vi.hoisted(() => ({
   generateLottoNumbersMock: vi.fn(),
@@ -54,7 +63,7 @@ describe("LottoNumberPreview", () => {
   });
 
   it("shows six empty balls without exposing numbers before a draw", () => {
-    render(<LottoNumberPreview />);
+    renderPreview();
 
     expect(screen.getAllByRole("img")).toHaveLength(6);
     expect(screen.getByRole("button", { name: "번호 뽑기" })).toBeEnabled();
@@ -62,7 +71,7 @@ describe("LottoNumberPreview", () => {
   });
 
   it("reveals each number in order and announces the finished combination", () => {
-    render(<LottoNumberPreview />);
+    renderPreview();
 
     fireEvent.click(screen.getByRole("button", { name: "번호 뽑기" }));
 
@@ -114,7 +123,7 @@ describe("LottoNumberPreview", () => {
   });
 
   it("clears the previous result and allows another draw after completion", () => {
-    render(<LottoNumberPreview />);
+    renderPreview();
 
     fireEvent.click(screen.getByRole("button", { name: "번호 뽑기" }));
     for (let step = 0; step < 6; step += 1) advanceReveal();
@@ -132,7 +141,7 @@ describe("LottoNumberPreview", () => {
 
   it("skips rolling and timed waits when reduced motion is preferred", () => {
     setReducedMotion(true);
-    render(<LottoNumberPreview />);
+    renderPreview();
 
     fireEvent.click(screen.getByRole("button", { name: "번호 뽑기" }));
 

@@ -9,6 +9,28 @@ import { syncAndReconcileSavedCombinationDrawResults } from "./sync-and-reconcil
 
 export class SavedCombinationNotFoundError extends Error {}
 
+export async function getSavedCombinationPage(
+  userId: string,
+  combinationId: string,
+  pageSize: number,
+): Promise<number | null> {
+  if (!ObjectId.isValid(combinationId) || pageSize < 1) return null;
+  const collection = await getCollection();
+  const target = await collection.findOne(
+    { _id: new ObjectId(combinationId), userId },
+    { projection: { createdAt: 1, _id: 1 } },
+  );
+  if (!target) return null;
+  const preceding = await collection.countDocuments({
+    userId,
+    $or: [
+      { createdAt: { $gt: target.createdAt } },
+      { createdAt: target.createdAt, _id: { $gt: target._id } },
+    ],
+  });
+  return Math.floor(preceding / pageSize) + 1;
+}
+
 function getCollection() {
   return getMongoDb().then((db) =>
     db.collection<SavedCombinationDocument>("saved_combinations"),

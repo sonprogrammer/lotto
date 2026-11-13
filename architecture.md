@@ -110,14 +110,17 @@ MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `mod
 
 ### 현재·MVP 문서
 
-| 컬렉션                | 필드                                                                                                                                                                                                                                                       | 인덱스                                                              | 상태                                                                                                                                    |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `users`               | `_id: ObjectId`, `kakaoId: string`, `nickname?: string`, `createdAt: Date`                                                                                                                                                                                 | `kakaoId` 고유 인덱스 적용                                          | 새 카카오 로그인은 닉네임을 저장. 기존 계정에서 닉네임이 없는 문서는 다음 로그인 때 갱신                                                |
-| `appSessions`         | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `tokenHash: 64자리 SHA-256 16진수`, `createdAt: Date`, `expiresAt: Date`                                                                                                                                      | `tokenHash` 고유 인덱스와 `expiresAt` TTL 인덱스 적용               | 로그인 기능에서 사용                                                                                                                    |
-| `lottery_draws`       | `_id: ObjectId`, `roundNumber: 양의 정수`, `drawDate: Date`, `numbers: 1–45의 중복 없는 정수 6개`, `bonusNumber: 1–45의 정수(당첨 번호와 중복 불가)`, `prizesByRank: { rank: 1–5, winnerCount: 0 이상의 정수, amountPerWinner: 0 이상의 정수 }[]`          | `roundNumber` 고유 인덱스                                           | 동행복권 공식 웹사이트에서 현재 조회 중인 공개 결과 응답을 Cron 또는 사용자 요청 때 회차 번호 기준 upsert하고 분석·회차 목록에서 사용   |
-| `lottery_sync_status` | 고정 `_id`, `runId`, `lastAttemptAt`, `lastSuccessAt`, `state`, `latestRound`, 안전한 `errorSummary`                                                                                                                                                       | 고정 ID 문서 한 개                                                  | 모든 사용자에게 공통인 최근 동기화 상태를 저장. 실행 로그나 원본 오류 응답은 저장하지 않음                                              |
-| `saved_combinations`  | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `source: manual \| ai-assisted`, `numbers: 1–45의 중복 없는 정수 6개`, `analysisSummary?: string`, `trackingStartRound: 양의 정수`, `numberVersions[]`, `drawResults[]`, `createdAt: Date`, `updatedAt: Date` | `{ userId, createdAt desc }`, `{ userId, trackingStartRound }` 후보 | 조합마다 문서 하나. `numberVersions`는 수정 전 숫자와 적용 회차 범위를 보존하고, `drawResults`는 이슈 #10에서 회차별 결과 스냅샷을 기록 |
-| `saved_prompts`       | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `title: 1~30자`, `content: 1~300자`, `sortOrder: 0~4 슬롯`, `createdAt: Date`, `updatedAt: Date`                                                                                                              | `{ userId, sortOrder }` 고유 인덱스                                 | 사용자별 최대 5개. 서버가 빈 슬롯을 배정하고 고유 인덱스로 동시 저장도 제한함                                                           |
+| 컬렉션                | 필드                                                                                                                                                                                                                                                       | 인덱스                                                                                                 | 상태                                                                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `users`               | `_id: ObjectId`, `kakaoId: string`, `nickname?: string`, `createdAt: Date`                                                                                                                                                                                 | `kakaoId` 고유 인덱스 적용                                                                             | 새 카카오 로그인은 닉네임을 저장. 기존 계정에서 닉네임이 없는 문서는 다음 로그인 때 갱신                                                |
+| `appSessions`         | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `tokenHash: 64자리 SHA-256 16진수`, `createdAt: Date`, `expiresAt: Date`                                                                                                                                      | `tokenHash` 고유 인덱스와 `expiresAt` TTL 인덱스 적용                                                  | 로그인 기능에서 사용                                                                                                                    |
+| `lottery_draws`       | `_id: ObjectId`, `roundNumber: 양의 정수`, `drawDate: Date`, `numbers: 1–45의 중복 없는 정수 6개`, `bonusNumber: 1–45의 정수(당첨 번호와 중복 불가)`, `prizesByRank: { rank: 1–5, winnerCount: 0 이상의 정수, amountPerWinner: 0 이상의 정수 }[]`          | `roundNumber` 고유 인덱스                                                                              | 동행복권 공식 웹사이트에서 현재 조회 중인 공개 결과 응답을 Cron 또는 사용자 요청 때 회차 번호 기준 upsert하고 분석·회차 목록에서 사용   |
+| `lottery_sync_status` | 고정 `_id`, `runId`, `lastAttemptAt`, `lastSuccessAt`, `state`, `latestRound`, 안전한 `errorSummary`                                                                                                                                                       | 고정 ID 문서 한 개                                                                                     | 모든 사용자에게 공통인 최근 동기화 상태를 저장. 실행 로그나 원본 오류 응답은 저장하지 않음                                              |
+| `saved_combinations`  | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `source: manual \| ai-assisted`, `numbers: 1–45의 중복 없는 정수 6개`, `analysisSummary?: string`, `trackingStartRound: 양의 정수`, `numberVersions[]`, `drawResults[]`, `createdAt: Date`, `updatedAt: Date` | `{ userId, createdAt desc }`, `{ userId, trackingStartRound }` 후보                                    | 조합마다 문서 하나. `numberVersions`는 수정 전 숫자와 적용 회차 범위를 보존하고, `drawResults`는 이슈 #10에서 회차별 결과 스냅샷을 기록 |
+| `saved_prompts`       | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `title: 1~30자`, `content: 1~300자`, `sortOrder: 0~4 슬롯`, `createdAt: Date`, `updatedAt: Date`                                                                                                              | `{ userId, sortOrder }` 고유 인덱스                                                                    | 사용자별 최대 5개. 서버가 빈 슬롯을 배정하고 고유 인덱스로 동시 저장도 제한함                                                           |
+| `push_subscriptions`  | `_id: ObjectId`, `userId`, Web Push `endpoint`, `keys`, `createdAt`, `updatedAt`                                                                                                                                                                           | `endpoint` 고유 인덱스                                                                                 | 기기별 구독. 등록·조회·삭제는 로그인 사용자의 세션으로 보호하며, endpoint는 개인 정보로 취급                                            |
+| `notifications`       | `_id: ObjectId`, `userId`, `savedCombinationId`, `roundNumber`, `drawDate`, `rank: 1~5 또는 정정 후 null`, `amountPerWinner`, `status: won \| corrected`, `readAt?`, `createdAt`, `updatedAt`                                                              | `{ userId, savedCombinationId, roundNumber }` 고유, `{ userId, createdAt desc, _id desc }` 조회 인덱스 | 저장 조합·회차별 알림함 항목 한 개                                                                                                      |
+| `push_deliveries`     | `_id: ObjectId`, `userId`, `notificationId`, `subscriptionId`, `status: pending \| attempted \| sent \| failed`, `attemptedAt?`, `sentAt?`, `errorCode?`                                                                                                   | `{ notificationId, subscriptionId }` 고유 인덱스                                                       | 알림 생성 시점의 기기별 전송 시도. 중복 전송 방지를 위해 최초 선점 후 재시도하지 않음                                                   |
 
 숫자 배열은 1–45의 정수 6개로 고정하고 중복을 금지합니다. 추첨 당첨 번호와 보너스 번호도 서로 달라야 합니다. 번호 추천 자체는 하나의 AI·통계 흐름이지만, 저장 조합은 사용자가 직접 만든 조합과 AI 추천 조합을 구분하므로 `source`를 보관합니다. AI 추천 조합에만 `analysisSummary`가 있습니다. 저장 문서는 사용자 ID로 모든 조회·수정·삭제 범위를 제한합니다.
 
@@ -129,7 +132,6 @@ MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `mod
 
 ### 후속 기능 문서
 
-- `push_subscriptions`, `notifications`: 이슈 #11에서 권한·해지·전송 실패·중복 방지 정책과 함께 모델을 정합니다.
 - `simulation_runs`, `simulation_results`: 이슈 #12에서 저장 여부, 재현 조건, 결과 보관 정책을 정한 뒤 모델을 추가합니다.
 
 인덱스가 “후보”로 표시된 컬렉션은 아직 쓰기 저장소가 구현되지 않았으므로 현재 MongoDB에 적용됐다고 보장하지 않습니다. 사용자 자료 조회에는 항상 인증 세션에서 확인한 사용자 ID를 조건으로 사용합니다.
@@ -147,6 +149,17 @@ MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `mod
 7. 분석·생성·저장 요청도 같은 동기화·결과 조정 유스케이스를 한 번 호출해 실패/성공 상태와 저장 조합의 회차별 결과를 갱신합니다. 알림함·푸시 전송은 이슈 #11 범위입니다.
 
 자료 출처는 동행복권 공식 웹사이트에서 현재 코드가 조회하는 공개 JSON 응답입니다. 이를 별도 공식 Open API라고 표현하거나, 명시적 재사용 허가가 확인됐다고 간주하지 않습니다. 과거 회차의 늦은 정정은 다음 전체 회차 동기화 때 반영될 수 있습니다.
+
+### 알림함과 Web Push 흐름
+
+- Issue #10 결과 조정 뒤 최신 공개 회차에서 1~5등을 얻은 저장 조합에 대해 `{ userId, savedCombinationId, roundNumber }` 고유 키로 알림함 문서를 upsert합니다. 회차 결과가 정정되면 같은 문서를 갱신하고 당첨이 취소되면 `corrected` 상태로 표시합니다. 이전 회차 알림을 일괄 생성하지 않습니다.
+- 푸시 전송 대상 기기는 알림 생성 시점의 활성 구독으로 고정합니다. 나중에 등록한 기기에는 과거 알림 푸시를 보내지 않지만 알림함에서 해당 기록을 볼 수 있습니다.
+- 읽음 여부는 `readAt`으로 저장합니다. 알림 API는 현재 세션의 `userId`로 조회·갱신하고 `private, no-store`를 사용합니다. TanStack Query 키에도 `userId`를 넣고 로그아웃·계정 전환 시 개인 캐시를 비웁니다.
+- 브라우저별 최초 안내를 `localStorage`로 한 번 표시하며, 브라우저 권한은 사용자의 `알림 켜기` 입력 안에서만 요청합니다. `나중에`를 선택해도 알림함에서 구독을 다시 관리할 수 있습니다.
+- 기기 endpoint는 한 계정에 귀속합니다. 로그아웃 요청은 현재 브라우저 endpoint만 전달하며, 서버는 세션의 `userId`와 endpoint가 모두 일치하는 구독만 삭제한 후 해당 세션을 종료합니다. 다른 endpoint의 다른 기기 구독은 유지합니다.
+- 알림 생성 시점 구독마다 `{ notificationId, subscriptionId }` pending 전송 기록을 만듭니다. 전송 직전에 pending을 attempted로 원자적으로 바꾼 뒤 `web-push`를 호출합니다. attempted 이상은 다시 보내지 않으므로 중복 전송은 막지만, 선점 직후 프로세스가 종료되거나 제공자 응답이 사라진 경우 푸시가 누락될 수 있습니다. pending은 다음 동기화 요청에서 처리합니다. 알림함 기록은 유지합니다. HTTP 404/410은 만료 구독으로 보고 삭제합니다.
+- `VAPID_PRIVATE_KEY`와 `VAPID_SUBJECT`는 서버에만 둡니다. `VAPID_PUBLIC_KEY`는 서버의 공개 설정 API를 통해 브라우저에 전달하며 `NEXT_PUBLIC_` 환경 변수로 저장하지 않습니다. 알림 UI의 사용자 데이터는 공통 Next 서버 캐시에 넣지 않습니다.
+- PWA 매니페스트와 서비스 워커는 앱 설치 및 푸시 수신·클릭 이동에 사용합니다. iOS에서는 16.4 이상 홈 화면 설치 웹 앱을 지원 조건으로 안내합니다.
 
 ## 9. 분석, 생성, 시뮬레이션
 
@@ -168,7 +181,7 @@ MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `mod
 ## 10. 배포와 비밀 값
 
 - 웹앱은 Vercel에 배포하는 방안을 사용자가 검토 중입니다.
-- `MONGODB_URI`, `MONGODB_DB_NAME`, `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`, `KAKAO_REDIRECT_URI`, AI 키는 서버 환경 변수에만 저장합니다. `KAKAO_REDIRECT_URI`에는 `/api/auth/kakao/callback` 경로만 넣고 배포 origin은 Vercel 시스템 변수에서 가져옵니다. 브라우저에 전달되는 변수 이름에 `NEXT_PUBLIC_`을 붙이지 않습니다.
+- `MONGODB_URI`, `MONGODB_DB_NAME`, `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`, `KAKAO_REDIRECT_URI`, AI 키, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`는 서버 환경 변수에만 저장합니다. `VAPID_PUBLIC_KEY`도 서버 설정에서 읽어 공개 설정 API로 전달합니다. `KAKAO_REDIRECT_URI`에는 `/api/auth/kakao/callback` 경로만 넣고 배포 origin은 Vercel 시스템 변수에서 가져옵니다. 브라우저에 전달되는 값은 환경 변수로 직접 공개하지 않습니다.
 - 카카오 토큰과 우리 서비스 세션은 서로 다른 값이며 저장 위치와 수명도 분리합니다. 카카오 토큰은 사용자 확인 후 버리고, 우리 세션은 해시만 MongoDB에 보관합니다.
 - 개발·미리보기·운영 환경에서 서로 다른 비밀 값을 쓸지 배포 설정 단계에서 정합니다.
 - 실제 서비스 계정과 자격 증명이 설정되기 전에는 카카오 로그인 연동을 완료했다고 볼 수 없습니다.

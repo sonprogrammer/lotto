@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 
 const SIGN_IN_PATH = "/api/auth/kakao";
 const SIGN_OUT_PATH = "/api/auth/logout";
@@ -9,6 +10,7 @@ const SIGN_OUT_ERROR = "로그아웃을 완료하지 못했어요. 다시 시도
 
 export function useAuthControl() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -23,11 +25,26 @@ export function useAuthControl() {
     setIsPending(true);
 
     try {
-      const response = await fetch(SIGN_OUT_PATH, { method: "POST" });
+      const registration =
+        "serviceWorker" in navigator && "PushManager" in window
+          ? await navigator.serviceWorker.getRegistration("/")
+          : undefined;
+      const subscription = await registration?.pushManager.getSubscription();
+      const response = await fetch(SIGN_OUT_PATH, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: subscription?.endpoint ?? null }),
+      });
       if (!response.ok) {
         setErrorMessage(SIGN_OUT_ERROR);
         return;
       }
+      try {
+        await subscription?.unsubscribe();
+      } catch {
+        // Server-side removal already prevents future sends to this device.
+      }
+      queryClient.clear();
       router.refresh();
     } catch {
       setErrorMessage(SIGN_OUT_ERROR);
