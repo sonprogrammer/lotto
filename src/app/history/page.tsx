@@ -9,6 +9,8 @@ export const metadata: Metadata = {
     "현재까지 공개된 로또 6/45 회차별 당첨 번호와 당첨금을 확인합니다.",
 };
 
+export const instant = false;
+
 export default async function HistoryPage() {
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/");

@@ -619,12 +619,7 @@ a {
 }
 
 .analysis-skeleton,
-.history-skeleton-card,
-.app-loading-mark,
-.app-loading-action,
-.app-loading-title,
-.app-loading-line,
-.app-loading-ball {
+.history-skeleton-card {
   background: linear-gradient(100deg, #e9edf3 25%, #f5f7fa 42%, #e9edf3 65%);
   background-size: 240% 100%;
   animation: loading-shimmer 1.5s ease-in-out infinite;
@@ -804,69 +799,6 @@ a {
   border-radius: 22px;
 }
 
-.app-loading-shell {
-  min-height: 100svh;
-  padding: 28px 32px;
-  background: linear-gradient(155deg, #f7f9fc 4%, #f1f4f9 100%);
-}
-
-.app-loading-header,
-.app-loading-content {
-  width: min(100%, 1080px);
-  margin: 0 auto;
-}
-
-.app-loading-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.app-loading-mark,
-.app-loading-action,
-.app-loading-title,
-.app-loading-line {
-  display: block;
-  border-radius: 999px;
-}
-
-.app-loading-mark {
-  width: 112px;
-  height: 18px;
-}
-
-.app-loading-action {
-  width: 90px;
-  height: 36px;
-}
-
-.app-loading-content {
-  padding-top: 88px;
-}
-
-.app-loading-title {
-  width: min(280px, 70%);
-  height: 38px;
-}
-
-.app-loading-line {
-  width: min(380px, 86%);
-  height: 14px;
-  margin-top: 20px;
-}
-
-.app-loading-ball-row {
-  display: flex;
-  gap: 12px;
-  margin-top: 46px;
-}
-
-.app-loading-ball {
-  width: 54px;
-  border-radius: 50%;
-  aspect-ratio: 1;
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -923,18 +855,6 @@ a {
 
   .analysis-skeleton-grid {
     grid-template-columns: 1fr;
-  }
-
-  .app-loading-shell {
-    padding: 22px 16px;
-  }
-
-  .app-loading-ball-row {
-    gap: 7px;
-  }
-
-  .app-loading-ball {
-    width: min(13vw, 54px);
   }
 }
 

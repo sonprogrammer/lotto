@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "과거 통계를 참고해 원하는 번호 조합을 생성합니다.",
 };
 
+export const instant = false;
+
 export default async function GeneratePage() {
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/");
