@@ -6,7 +6,8 @@ describe("SavedPromptDocumentSchema", () => {
   const validDocument = {
     _id: new ObjectId(),
     userId: "65ab12cd34ef56ab78cd90ef",
-    prompt: "홀짝과 구간 균형을 분석해서 추천해줘.",
+    title: "균형 조합",
+    content: "홀짝과 구간 균형을 분석해서 추천해줘.",
     sortOrder: 0,
     createdAt: new Date("2026-11-08T00:00:00.000Z"),
     updatedAt: new Date("2026-11-08T00:00:00.000Z"),
@@ -20,8 +21,12 @@ describe("SavedPromptDocumentSchema", () => {
 
   it.each([
     { userId: "invalid" },
-    { prompt: "   " },
+    { title: "   " },
+    { content: "   " },
+    { title: "가".repeat(31) },
+    { content: "가".repeat(301) },
     { sortOrder: -1 },
+    { sortOrder: 5 },
     { createdAt: "2026-11-08T00:00:00.000Z" },
     { updatedAt: new Date("2026-11-07T23:59:59.999Z") },
   ])("rejects an invalid saved prompt field", (override) => {

@@ -12,6 +12,9 @@ export default async function GeneratePage() {
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/");
   return (
-    <GenerationDashboard displayName={currentUser.nickname ?? undefined} />
+    <GenerationDashboard
+      displayName={currentUser.nickname ?? undefined}
+      userId={currentUser.userId}
+    />
   );
 }
