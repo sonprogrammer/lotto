@@ -58,19 +58,25 @@ export function useRunWeeklyAnalysis(period: AnalysisPeriod) {
       cachedState?.data !== undefined &&
       !cachedState.isInvalidated &&
       Date.now() - cachedState.dataUpdatedAt < ANALYSIS_STALE_TIME;
-    const result = await queryClient.fetchQuery({
-      queryKey,
-      queryFn: () => requestAnalysis(period),
-      staleTime: ANALYSIS_STALE_TIME,
-      gcTime: ANALYSIS_GC_TIME,
-    });
+    try {
+      const result = await queryClient.fetchQuery({
+        queryKey,
+        queryFn: () => requestAnalysis(period),
+        staleTime: ANALYSIS_STALE_TIME,
+        gcTime: ANALYSIS_GC_TIME,
+      });
 
-    if (!hasFreshCachedResult) {
+      if (!hasFreshCachedResult) {
+        await queryClient.invalidateQueries({
+          queryKey: ["lottery-draw-history"],
+        });
+      }
+      return result;
+    } finally {
       await queryClient.invalidateQueries({
-        queryKey: ["lottery-draw-history"],
+        queryKey: ["lottery-sync-status"],
       });
     }
-    return result;
   }
 
   return { ...analysisQuery, run };

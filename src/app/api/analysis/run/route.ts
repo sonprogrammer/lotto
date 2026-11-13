@@ -2,7 +2,7 @@ import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import {
   LOTTERY_DRAW_HISTORY_CACHE_TAG,
-  syncLotteryDraws,
+  runLotteryDrawSync,
 } from "@/entities/lottery-draw";
 import {
   AnalysisPeriodSchema,
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const syncResult = await syncLotteryDraws();
+    const syncResult = await runLotteryDrawSync({ maxAttempts: 1 });
     if (
       periodResult.data.type === "recent" &&
       periodResult.data.count > syncResult.drawCount

@@ -17,7 +17,7 @@ vi.mock("@/features/auth/server/current-session", () => ({
   getCurrentUser: getCurrentUserMock,
 }));
 vi.mock("@/entities/lottery-draw", () => ({
-  syncLotteryDraws: syncLotteryDrawsMock,
+  runLotteryDrawSync: syncLotteryDrawsMock,
   LOTTERY_DRAW_HISTORY_CACHE_TAG: "lottery-draw-history",
 }));
 vi.mock("@/features/analysis", async (importOriginal) => ({

@@ -16,7 +16,7 @@ const {
 }));
 vi.mock("next/cache", () => ({ revalidateTag: revalidateTagMock }));
 vi.mock("@/entities/lottery-draw", () => ({
-  syncLotteryDraws: syncLotteryDrawsMock,
+  runLotteryDrawSync: syncLotteryDrawsMock,
   LOTTERY_DRAW_HISTORY_CACHE_TAG: "lottery-draw-history",
 }));
 vi.mock("@/features/analysis", async (importOriginal) => ({
