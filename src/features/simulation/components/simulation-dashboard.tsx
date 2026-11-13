@@ -112,7 +112,7 @@ export function SimulationDashboard({ displayName, userId }: Props) {
           </div>
         )}
 
-        {runsQuery.isPending ? (
+        {runsQuery.isPending && !runsQuery.data ? (
           <div
             aria-busy="true"
             className="mt-8 animate-pulse space-y-3"
@@ -121,7 +121,7 @@ export function SimulationDashboard({ displayName, userId }: Props) {
             <div className="h-7 w-48 rounded bg-slate-200" />
             <div className="h-24 rounded-2xl bg-slate-100" />
           </div>
-        ) : runsQuery.isError ? (
+        ) : runsQuery.isError && !runsQuery.data ? (
           <div
             className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-900"
             role="alert"
@@ -174,38 +174,38 @@ export function SimulationDashboard({ displayName, userId }: Props) {
                 ))}
               </select>
             </section>
-
-            {runQuery.isPending ? (
-              <div
-                aria-busy="true"
-                className="mt-6 animate-pulse space-y-3"
-                role="status"
-              >
-                <div className="h-24 rounded-2xl bg-slate-100" />
-                <div className="h-64 rounded-2xl bg-slate-100" />
-              </div>
-            ) : runQuery.isError ? (
-              <div
-                className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900"
-                role="alert"
-              >
-                <p>이 시뮬레이션 결과를 불러오지 못했어요.</p>
-                <button
-                  className="mt-3 min-h-10 rounded-lg border border-rose-300 bg-white px-3 font-medium"
-                  onClick={() => void runQuery.refetch()}
-                  type="button"
-                >
-                  다시 불러오기
-                </button>
-              </div>
-            ) : runQuery.data ? (
-              <>
-                <SimulationSummary run={runQuery.data} />
-                <SimulationRoundList run={runQuery.data} />
-              </>
-            ) : null}
           </>
         )}
+
+        {activeRunId && runQuery.isPending ? (
+          <div
+            aria-busy="true"
+            className="mt-6 animate-pulse space-y-3"
+            role="status"
+          >
+            <div className="h-24 rounded-2xl bg-slate-100" />
+            <div className="h-64 rounded-2xl bg-slate-100" />
+          </div>
+        ) : activeRunId && runQuery.isError && !runQuery.data ? (
+          <div
+            className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900"
+            role="alert"
+          >
+            <p>이 시뮬레이션 결과를 불러오지 못했어요.</p>
+            <button
+              className="mt-3 min-h-10 rounded-lg border border-rose-300 bg-white px-3 font-medium"
+              onClick={() => void runQuery.refetch()}
+              type="button"
+            >
+              다시 불러오기
+            </button>
+          </div>
+        ) : runQuery.data ? (
+          <>
+            <SimulationSummary run={runQuery.data} />
+            <SimulationRoundList run={runQuery.data} />
+          </>
+        ) : null}
       </section>
     </main>
   );

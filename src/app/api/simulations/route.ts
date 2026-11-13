@@ -56,6 +56,18 @@ export async function POST(request: Request) {
         400,
       );
     }
+    if (
+      error instanceof SimulationInputError &&
+      error.message === "Simulation draw history must be continuous"
+    ) {
+      return privateJson(
+        {
+          error: "당첨 회차 자료에 누락이 있어 시뮬레이션할 수 없어요.",
+          retryable: false,
+        },
+        400,
+      );
+    }
     return privateJson(
       {
         error: "시뮬레이션을 실행하지 못했어요. 다시 시도해 주세요.",

@@ -112,3 +112,17 @@ it("explains when history is too short and hides infrastructure details", async 
   expect(failedBody).toMatchObject({ retryable: true });
   expect(JSON.stringify(failedBody)).not.toContain("private database error");
 });
+
+it("reports discontinuous draw history as a non-retryable history error", async () => {
+  createMock.mockRejectedValueOnce(
+    new SimulationInputErrorMock("Simulation draw history must be continuous"),
+  );
+
+  const response = await POST(request("POST", {}));
+
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({
+    error: "당첨 회차 자료에 누락이 있어 시뮬레이션할 수 없어요.",
+    retryable: false,
+  });
+});

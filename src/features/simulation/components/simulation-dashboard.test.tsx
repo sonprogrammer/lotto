@@ -203,4 +203,31 @@ describe("SimulationDashboard", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("결과를 저장했어요");
   });
+
+  it("keeps a newly saved result visible if refreshing the run list fails", () => {
+    useRunsMock.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: new Error("list refresh failed"),
+      refetch: vi.fn(),
+    });
+    useRunMock.mockReturnValue({ data: run, isPending: false, isError: false });
+    useCreateMock.mockReturnValue({
+      mutate: (
+        _count: number,
+        options: { onSuccess: (result: typeof run) => void },
+      ) => options.onSuccess(run),
+      isPending: false,
+      isError: false,
+    });
+
+    render(<SimulationDashboard displayName="영진" userId="user-1" />);
+    fireEvent.click(screen.getByRole("button", { name: "시뮬레이션 실행" }));
+
+    expect(screen.getByText("최근 30회차 비교")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "저장된 시뮬레이션을 불러오지 못했어요.",
+    );
+  });
 });
