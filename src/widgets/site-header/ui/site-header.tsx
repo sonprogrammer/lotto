@@ -40,6 +40,9 @@ export function SiteHeader({
             <Link className="analysis-link" href="/history">
               당첨 내역
             </Link>
+            <Link className="analysis-link" href="/saved">
+              저장한 번호
+            </Link>
             {userId && (
               <button
                 className="analysis-link site-navigation-button"

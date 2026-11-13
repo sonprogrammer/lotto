@@ -1,7 +1,8 @@
 import type { GenerationResult } from "../hooks/use-generate-combinations";
 import { GenerationStatistics } from "./generation-statistics";
+import { SaveGeneratedCombination } from "./save-generated-combination";
 
-type Props = { result: GenerationResult };
+type Props = { result: GenerationResult; userId: string };
 
 function getNumberTone(number: number) {
   if (number <= 10) return "gold";
@@ -36,7 +37,7 @@ function constraintLabels(result: GenerationResult) {
   return labels.length ? labels : ["기본 통계 규칙"];
 }
 
-export function GenerationResults({ result }: Props) {
+export function GenerationResults({ result, userId }: Props) {
   const periodLabel =
     result.period.type === "all"
       ? "전체 회차"
@@ -62,7 +63,7 @@ export function GenerationResults({ result }: Props) {
       <ol className="generation-combinations">
         {result.combinations.map(({ numbers }, index) => (
           <li
-            className="generation-combination"
+            className="generation-combination flex-wrap"
             key={`${result.seed}-${index}`}
           >
             <span className="generation-combination-index">
@@ -82,6 +83,11 @@ export function GenerationResults({ result }: Props) {
                 </span>
               ))}
             </div>
+            <SaveGeneratedCombination
+              userId={userId}
+              numbers={numbers}
+              analysisSummary={result.explanation}
+            />
           </li>
         ))}
       </ol>

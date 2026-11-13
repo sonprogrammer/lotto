@@ -205,7 +205,7 @@ export function GenerationDashboard({ displayName, userId }: Props) {
             </button>
           </div>
         ) : generation.data ? (
-          <GenerationResults result={generation.data} />
+          <GenerationResults result={generation.data} userId={userId} />
         ) : (
           <p className="generation-feedback">
             번호나 의견을 추가하지 않아도 조합 생성하기를 눌러 만들 수 있어요.
