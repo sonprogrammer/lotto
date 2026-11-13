@@ -116,7 +116,7 @@ MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `mod
 | `appSessions`        | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `tokenHash: 64자리 SHA-256 16진수`, `createdAt: Date`, `expiresAt: Date`                                                                                                                             | `tokenHash` 고유 인덱스와 `expiresAt` TTL 인덱스 적용        | 로그인 기능에서 사용                                                                     |
 | `lottery_draws`      | `_id: ObjectId`, `roundNumber: 양의 정수`, `drawDate: Date`, `numbers: 1–45의 중복 없는 정수 6개`, `bonusNumber: 1–45의 정수(당첨 번호와 중복 불가)`, `prizesByRank: { rank: 1–5, winnerCount: 0 이상의 정수, amountPerWinner: 0 이상의 정수 }[]` | `roundNumber` 고유 인덱스                                    | 동행복권 공개 회차 조회 응답을 분석 실행 때 upsert하고 분석·회차 목록에서 사용           |
 | `saved_combinations` | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `targetRound: 양의 정수`, `numbers: 1–45의 중복 없는 정수 6개`, `analysisSummary: string`, `createdAt: Date`                                                                                         | `{ userId, createdAt desc }`, `{ userId, targetRound }` 후보 | 조합마다 문서 하나. 등수와 당첨금은 연결된 회차에서 계산하며 조합 문서에 복사하지 않음   |
-| `saved_prompts`      | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `title: string`, `content: string`, `sortOrder: 0 이상의 정수`, `createdAt: Date`, `updatedAt: Date`                                                                                                 | `{ userId, sortOrder }` 후보                                 | 이슈 #7에서 구현. 사용자별 최대 5개는 저장 작업에서 보장. 목록은 제목으로 선택           |
+| `saved_prompts`      | `_id: ObjectId`, `userId: 24자리 ID 문자열`, `title: 1~30자`, `content: 1~300자`, `sortOrder: 0~4 슬롯`, `createdAt: Date`, `updatedAt: Date`                                                                                                     | `{ userId, sortOrder }` 고유 인덱스                          | 사용자별 최대 5개. 서버가 빈 슬롯을 배정하고 고유 인덱스로 동시 저장도 제한함            |
 
 숫자 배열은 1–45의 정수 6개로 고정하고 중복을 금지합니다. 추첨 당첨 번호와 보너스 번호도 서로 달라야 합니다. 번호 생성은 하나의 흐름이므로 생성 방식 enum과 저장 조합의 `generationMethod` 필드를 두지 않습니다. 등수·당첨금은 대상 회차 문서의 번호와 등수별 자료로 계산해 정정 시 중복된 결과가 어긋나는 것을 피합니다.
 
@@ -155,7 +155,7 @@ MongoDB 문서의 TypeScript 타입과 Zod 스키마는 해당 엔티티의 `mod
 - 번호 생성은 하나의 AI 보조 통계 생성 흐름입니다. Groq AI가 직접 입력한 의견을 통계 및 선택 번호와 함께 허용된 조건으로 해석하고 서버가 조건을 검증해 실제 조합을 계산합니다. 의견이 없으면 선택 번호 유무와 관계없이 기본 프롬프트를 사용합니다. 입력과 기준 자료 검증을 통과한 생성 요청마다 AI 추천을 정확히 한 번 호출하며 조합 전체에 대한 설명 1~2줄을 작성합니다. AI 제공자는 Groq로 선택했습니다. 초기 모델은 `openai/gpt-oss-120b`를 검토하며 배포 전 계정의 사용 가능 모델과 무료 한도를 운영 항목으로 확인합니다.
 - Groq에는 선택 번호, 프롬프트 본문, 필요한 집계 통계만 전송합니다. 닉네임·이메일·계정 ID·저장 조합·원본 전체 회차는 보내지 않습니다. 호출은 생성 요청당 최대 1회이며 실패하거나 무료 한도를 초과하면 임의의 AI 결과를 만들지 않고 재시도 안내를 표시합니다.
 - 번호 생성은 1~45 사이에서 서로 다른 번호 6개를 만듭니다. 고정 번호는 0~6개까지 선택적으로 입력하며 모든 결과에 반드시 포함합니다. 6개를 모두 고르면 한 조합만 표시합니다. 기본 분석 기간은 최근 30회입니다. 재생성 시 새 후보를 만들고, 생성 시드와 기준 회차를 결과에 기록합니다.
-- 저장 프롬프트 UI는 이슈 #7 범위입니다. 사용자별 최대 5개의 `title`과 `content`를 저장하고 생성 시 제목으로 선택하거나 새 의견을 입력합니다. 둘 다 없으면 기본 프롬프트를 적용합니다. 이슈 #6에서는 직접 입력과 기본 프롬프트만 지원하며 저장 프롬프트 저장소·UI는 구현하지 않습니다.
+- 저장 프롬프트 API는 인증 세션의 사용자 ID로 범위를 제한하고 `private, no-store` 응답을 사용합니다. TanStack Query 키에도 사용자 ID를 포함하고 30초 후 오래된 데이터로 처리하며 창에 다시 돌아오면 새로 확인합니다. 저장·수정·삭제 요청이 끝나면 성공·실패와 관계없이 해당 사용자 목록 캐시를 무효화합니다. 사용자별 최대 5개를 보장하며 제목은 30자, 내용은 300자까지 받습니다. 생성 시 저장 프롬프트의 내용이나 새 의견 중 하나를 적용하고, 둘 다 없으면 기본 프롬프트를 사용합니다.
 - 나중에 생성 결과를 재현할 수 있도록 기준 회차, 분석 기간, 프롬프트, 적용 조건을 저장하는 방안을 검토합니다. 저장 기간은 미정입니다.
 - 시뮬레이션은 매 회차 직전의 정보만 사용하고, 과거 결과가 미래 당첨 가능성을 뜻하지 않는다고 표시합니다.
 

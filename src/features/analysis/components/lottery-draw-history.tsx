@@ -7,16 +7,25 @@ import { useLotteryDrawHistory } from "../hooks/use-lottery-draw-history";
 
 type LotteryDrawHistoryProps = {
   displayName?: string;
+  userId: string;
 };
 
-export function LotteryDrawHistory({ displayName }: LotteryDrawHistoryProps) {
+export function LotteryDrawHistory({
+  displayName,
+  userId,
+}: LotteryDrawHistoryProps) {
   const query = useLotteryDrawHistory();
   const draws =
     query.data?.pages.flatMap(({ draws: pageDraws }) => pageDraws) ?? [];
 
   return (
     <main className="history-shell">
-      <SiteHeader displayName={displayName} isConfigured isSignedIn />
+      <SiteHeader
+        displayName={displayName}
+        userId={userId}
+        isConfigured
+        isSignedIn
+      />
       <section className="history-content" aria-labelledby="history-title">
         <p className="analysis-eyebrow">LOTTO 6/45 · DRAW HISTORY</p>
         <h1 id="history-title">회차별 당첨 내역</h1>

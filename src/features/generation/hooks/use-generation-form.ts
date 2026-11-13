@@ -1,22 +1,34 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import type { SavedPrompt } from "@/entities/saved-prompt/model/prompt";
 import { useGenerateCombinations } from "./use-generate-combinations";
 
-export function useGenerationForm() {
+export type GenerationPromptMode = "default" | "saved" | "custom";
+
+export function useGenerationForm(savedPrompts: SavedPrompt[] = []) {
   const [fixedNumbers, setFixedNumbers] = useState<number[]>([]);
   const [count, setCount] = useState(5);
   const [periodChoice, setPeriodChoice] = useState("recent:30");
   const [customCount, setCustomCount] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [promptMode, setPromptMode] = useState<GenerationPromptMode>("default");
+  const [savedPromptId, setSavedPromptId] = useState("");
   const generation = useGenerateCombinations();
+  const selectedSavedPrompt = savedPrompts.find(
+    (savedPrompt) => savedPrompt.id === savedPromptId,
+  );
+  const activePromptMode =
+    savedPromptId && !selectedSavedPrompt ? "default" : promptMode;
+  const activeSavedPromptId = selectedSavedPrompt ? savedPromptId : "";
   const customPeriodValid =
     /^[1-9]\d*$/.test(customCount) && Number.isSafeInteger(Number(customCount));
   const countValid = fixedNumbers.length !== 6 || count === 1;
   const canSubmit =
     !generation.isPending &&
     countValid &&
-    (periodChoice !== "custom" || customPeriodValid);
+    (periodChoice !== "custom" || customPeriodValid) &&
+    (activePromptMode !== "saved" || Boolean(selectedSavedPrompt));
 
   function toggleNumber(number: number) {
     if (generation.isPending) return;
@@ -50,7 +62,16 @@ export function useGenerationForm() {
     setPrompt(value);
     generation.reset();
   }
-
+  function changePromptMode(value: GenerationPromptMode) {
+    if (generation.isPending) return;
+    setPromptMode(value);
+    generation.reset();
+  }
+  function changeSavedPromptId(value: string) {
+    if (generation.isPending) return;
+    setSavedPromptId(value);
+    generation.reset();
+  }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
@@ -64,11 +85,18 @@ export function useGenerationForm() {
                 ? Number(customCount)
                 : Number(periodChoice.split(":")[1]),
           };
+    const activePrompt =
+      activePromptMode === "saved"
+        ? selectedSavedPrompt?.content
+        : activePromptMode === "custom"
+          ? prompt.trim()
+          : undefined;
+
     generation.mutate({
       fixedNumbers,
       count,
       period,
-      ...(prompt.trim() ? { prompt: prompt.trim() } : {}),
+      ...(activePrompt ? { prompt: activePrompt } : {}),
     });
   }
 
@@ -83,6 +111,8 @@ export function useGenerationForm() {
     periodChoice,
     customCount,
     prompt,
+    promptMode: activePromptMode,
+    savedPromptId: activeSavedPromptId,
     generation,
     customPeriodValid,
     countValid,
@@ -92,6 +122,8 @@ export function useGenerationForm() {
     changePeriodChoice,
     changeCustomCount,
     changePrompt,
+    changePromptMode,
+    changeSavedPromptId,
     submit,
     retry,
   };

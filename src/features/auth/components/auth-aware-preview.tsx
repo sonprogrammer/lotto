@@ -6,6 +6,7 @@ export async function AuthAwarePreview() {
   let isConfigured = false;
   let isSignedIn = false;
   let displayName: string | undefined;
+  let userId: string | undefined;
 
   try {
     getKakaoConfig();
@@ -14,6 +15,7 @@ export async function AuthAwarePreview() {
     const currentUser = await getCurrentUser();
     isSignedIn = Boolean(currentUser);
     displayName = currentUser?.nickname ?? undefined;
+    userId = currentUser?.userId;
   } catch {
     isConfigured = false;
   }
@@ -21,6 +23,7 @@ export async function AuthAwarePreview() {
   return (
     <LottoNumberPreview
       displayName={displayName}
+      userId={userId}
       isConfigured={isConfigured}
       isSignedIn={isSignedIn}
     />

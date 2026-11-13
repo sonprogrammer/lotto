@@ -14,5 +14,10 @@ export default async function AnalysisPage() {
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/");
 
-  return <AnalysisDashboard displayName={currentUser.nickname ?? undefined} />;
+  return (
+    <AnalysisDashboard
+      displayName={currentUser.nickname ?? undefined}
+      userId={currentUser.userId}
+    />
+  );
 }

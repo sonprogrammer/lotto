@@ -39,6 +39,7 @@ it("renders the analysis action for the signed-in user", async () => {
 
   expect(element.props).toMatchObject({
     displayName: "손영진",
+    userId: "user-1",
   });
 });
 

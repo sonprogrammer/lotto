@@ -1,12 +1,14 @@
 "use client";
 
 import { SiteHeader } from "@/widgets/site-header";
+import { useSavedPrompts } from "@/features/saved-prompt/hooks/use-saved-prompts";
 import { useGenerationForm } from "../hooks/use-generation-form";
 import { GenerationResults } from "./generation-results";
+import { GenerationPromptControl } from "./generation-prompt-control";
 import { SelectedNumberList } from "./selected-number-list";
 import "./generation.css";
 
-type Props = { displayName?: string };
+type Props = { displayName?: string; userId: string };
 
 function getNumberTone(number: number) {
   if (number <= 10) return "gold";
@@ -16,13 +18,17 @@ function getNumberTone(number: number) {
   return "green";
 }
 
-export function GenerationDashboard({ displayName }: Props) {
+export function GenerationDashboard({ displayName, userId }: Props) {
+  const savedPromptsQuery = useSavedPrompts(userId);
+  const savedPrompts = savedPromptsQuery.data ?? [];
   const {
     fixedNumbers,
     count,
     periodChoice,
     customCount,
     prompt,
+    promptMode,
+    savedPromptId,
     generation,
     customPeriodValid,
     countValid,
@@ -32,13 +38,20 @@ export function GenerationDashboard({ displayName }: Props) {
     changePeriodChoice,
     changeCustomCount,
     changePrompt,
+    changePromptMode,
+    changeSavedPromptId,
     submit,
     retry,
-  } = useGenerationForm();
+  } = useGenerationForm(savedPrompts);
 
   return (
     <main className="analysis-shell">
-      <SiteHeader displayName={displayName} isConfigured isSignedIn />
+      <SiteHeader
+        displayName={displayName}
+        userId={userId}
+        isConfigured
+        isSignedIn
+      />
       <div className="analysis-content generation-content">
         <p className="analysis-eyebrow">LOTTO 6/45 · NUMBER STUDIO</p>
         <h1>나만의 번호 조합</h1>
@@ -146,25 +159,19 @@ export function GenerationDashboard({ displayName }: Props) {
               )}
             </div>
           </div>
-          <div className="generation-control generation-prompt">
-            <label htmlFor="generation-prompt">
-              생성에 참고할 의견{" "}
-              <span className="generation-hint">선택 사항</span>
-            </label>
-            <textarea
-              id="generation-prompt"
-              disabled={generation.isPending}
-              maxLength={500}
-              value={prompt}
-              onChange={(event) => changePrompt(event.target.value)}
-              placeholder="원하는 조합 방향이나 참고할 점을 적어주세요. 예: 홀수가 3개 정도면 좋겠어요."
-              rows={3}
-            />
-            <p className="generation-helper">
-              입력하신 의견은 통계와 함께 고려해요. 의견이 없으면 기본
-              프롬프트로 AI가 추천해요. {prompt.length}/500자
-            </p>
-          </div>
+          <GenerationPromptControl
+            mode={promptMode}
+            prompt={prompt}
+            savedPromptId={savedPromptId}
+            savedPrompts={savedPrompts}
+            isLoading={savedPromptsQuery.isPending}
+            isError={savedPromptsQuery.isError}
+            disabled={generation.isPending}
+            onModeChange={changePromptMode}
+            onPromptChange={changePrompt}
+            onSavedPromptChange={changeSavedPromptId}
+            onRetry={() => void savedPromptsQuery.refetch()}
+          />
           <button
             className="generation-submit"
             type="submit"

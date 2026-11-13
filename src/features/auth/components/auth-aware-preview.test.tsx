@@ -60,6 +60,7 @@ describe("AuthAwarePreview", () => {
     expect(element.props).toMatchObject({
       isSignedIn: true,
       displayName: "손영진",
+      userId: "user-1",
     });
   });
 });

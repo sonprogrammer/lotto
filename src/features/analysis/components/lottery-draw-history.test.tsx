@@ -28,7 +28,10 @@ function renderHistory() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <LotteryDrawHistory displayName="손영진" />
+      <LotteryDrawHistory
+        displayName="손영진"
+        userId="65ab12cd34ef56ab78cd90ef"
+      />
     </QueryClientProvider>,
   );
 }

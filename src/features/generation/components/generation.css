@@ -205,6 +205,68 @@
   margin: 0;
   text-align: right;
 }
+.generation-prompt-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  padding: 5px;
+  border: 1px solid #e4eaf2;
+  border-radius: 14px;
+  background: #f5f8fc;
+}
+.generation-prompt-modes button,
+.generation-prompt-error button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #64758a;
+  padding: 0 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+.generation-prompt-modes button[aria-pressed="true"] {
+  background: #fff;
+  color: #263d5e;
+  box-shadow: 0 2px 7px rgb(38 61 94 / 10%);
+}
+.generation-prompt-modes button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.generation-prompt-selection {
+  margin-top: 16px;
+}
+.generation-prompt-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #f0d0cc;
+  border-radius: 12px;
+  background: #fff9f8;
+  padding: 10px 12px;
+  color: #ad433b;
+  font-size: 13px;
+}
+.generation-prompt-error button {
+  min-height: 32px;
+  flex: none;
+  color: #8f332b;
+}
+.generation-prompt-skeleton {
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #edf1f6 25%, #f7f9fb 50%, #edf1f6 75%);
+  background-size: 200% 100%;
+  animation: generation-shimmer 1.6s infinite;
+}
 .generation-validation {
   margin: 10px 0 0;
   color: #ad433b;

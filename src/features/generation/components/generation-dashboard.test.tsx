@@ -7,6 +7,12 @@ import { GenerationDashboard } from "./generation-dashboard";
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
 vi.mock("@/widgets/site-header", () => ({ SiteHeader: () => <header /> }));
+const { useSavedPromptsMock } = vi.hoisted(() => ({
+  useSavedPromptsMock: vi.fn(),
+}));
+vi.mock("@/features/saved-prompt/hooks/use-saved-prompts", () => ({
+  useSavedPrompts: useSavedPromptsMock,
+}));
 
 function renderDashboard() {
   return render(
@@ -15,7 +21,10 @@ function renderDashboard() {
         new QueryClient({ defaultOptions: { mutations: { retry: false } } })
       }
     >
-      <GenerationDashboard displayName="손영진" />
+      <GenerationDashboard
+        displayName="손영진"
+        userId="65ab12cd34ef56ab78cd90ef"
+      />
     </QueryClientProvider>,
   );
 }
@@ -40,7 +49,100 @@ const result = {
   seed: "sample-seed",
 };
 
-beforeEach(() => fetchMock.mockReset());
+beforeEach(() => {
+  fetchMock.mockReset();
+  useSavedPromptsMock.mockReturnValue({
+    data: [],
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
+    configurable: true,
+    value: function (this: HTMLDialogElement) {
+      this.open = true;
+    },
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, "close", {
+    configurable: true,
+    value: function (this: HTMLDialogElement) {
+      this.open = false;
+    },
+  });
+});
+
+it("uses the selected saved prompt content for generation", async () => {
+  useSavedPromptsMock.mockReturnValue({
+    data: [
+      {
+        id: "65ab12cd34ef56ab78cd9001",
+        title: "균형 조합",
+        content: "홀짝을 3개씩 맞춰주세요.",
+        sortOrder: 0,
+        createdAt: "2026-11-08T00:00:00.000Z",
+        updatedAt: "2026-11-08T00:00:00.000Z",
+      },
+    ],
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+  });
+  fetchMock.mockResolvedValue(new Response(JSON.stringify(result)));
+  renderDashboard();
+
+  await userEvent.click(screen.getByRole("button", { name: "저장 프롬프트" }));
+  await userEvent.selectOptions(
+    screen.getByRole("combobox", { name: "저장 프롬프트 선택" }),
+    "65ab12cd34ef56ab78cd9001",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "조합 생성하기" }));
+
+  const request = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+  expect(request.prompt).toBe("홀짝을 3개씩 맞춰주세요.");
+});
+
+it("keeps prompt management out of the generation form", () => {
+  renderDashboard();
+
+  expect(
+    screen.queryByRole("button", { name: "프롬프트 관리" }),
+  ).not.toBeInTheDocument();
+});
+
+it("keeps a new opinion separate from any saved prompt", async () => {
+  useSavedPromptsMock.mockReturnValue({
+    data: [
+      {
+        id: "65ab12cd34ef56ab78cd9001",
+        title: "균형 조합",
+        content: "저장된 의견",
+        sortOrder: 0,
+        createdAt: "2026-11-08T00:00:00.000Z",
+        updatedAt: "2026-11-08T00:00:00.000Z",
+      },
+    ],
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+  });
+  fetchMock.mockResolvedValue(new Response(JSON.stringify(result)));
+  renderDashboard();
+
+  await userEvent.click(screen.getByRole("button", { name: "저장 프롬프트" }));
+  await userEvent.selectOptions(
+    screen.getByRole("combobox", { name: "저장 프롬프트 선택" }),
+    "65ab12cd34ef56ab78cd9001",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "새 의견" }));
+  await userEvent.type(
+    screen.getByRole("textbox", { name: /새 의견 입력/ }),
+    "연속수는 피해주세요.",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "조합 생성하기" }));
+
+  const request = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+  expect(request.prompt).toBe("연속수는 피해주세요.");
+});
 
 it("keeps all controls locked until the pending generation settles", async () => {
   let resolveRequest!: (response: Response) => void;
@@ -50,9 +152,10 @@ it("keeps all controls locked until the pending generation settles", async () =>
     }),
   );
   renderDashboard();
+  await userEvent.click(screen.getByRole("button", { name: "새 의견" }));
   const count = screen.getByRole("combobox", { name: "생성 개수" });
   const period = screen.getByRole("combobox", { name: "분석 기간" });
-  const prompt = screen.getByRole("textbox", { name: /생성에 참고할 의견/ });
+  const prompt = screen.getByRole("textbox", { name: /새 의견 입력/ });
   await userEvent.selectOptions(period, "custom");
   const custom = screen.getByRole("spinbutton", { name: "직접 입력 회차" });
   await userEvent.type(custom, "12");
@@ -211,9 +314,7 @@ it("prevents selecting more than six fixed numbers and allows deselection", asyn
     "lotto-ball-green",
   );
   expect(
-    screen.getByText(
-      /입력하신 의견은 통계와 함께 고려해요\. 의견이 없으면 기본 프롬프트로 AI가 추천해요\./,
-    ),
+    screen.getByText(/별도 의견을 고르지 않으면 기본 프롬프트/),
   ).toBeInTheDocument();
   for (const number of [1, 2, 3, 4, 5, 6]) {
     await userEvent.click(
@@ -256,8 +357,9 @@ it("submits selected balls and a trimmed optional prompt in one request", async 
   renderDashboard();
   await userEvent.click(screen.getByRole("button", { name: "9번 고정" }));
   await userEvent.click(screen.getByRole("button", { name: "1번 고정" }));
+  await userEvent.click(screen.getByRole("button", { name: "새 의견" }));
   await userEvent.type(
-    screen.getByRole("textbox", { name: /생성에 참고할 의견/ }),
+    screen.getByRole("textbox", { name: /새 의견 입력/ }),
     " 홀수 3개 ",
   );
   await userEvent.click(screen.getByRole("button", { name: "조합 생성하기" }));
