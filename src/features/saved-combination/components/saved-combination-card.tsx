@@ -31,6 +31,13 @@ export function SavedCombinationCard({
         : [...current, number].sort((a, b) => a - b),
     );
   const title = item.source === "manual" ? "직접 저장" : "AI 추천 저장";
+  const latestResult = item.drawResults.reduce<
+    (typeof item.drawResults)[number] | null
+  >(
+    (latest, result) =>
+      !latest || result.roundNumber > latest.roundNumber ? result : latest,
+    null,
+  );
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4">
       <div className="flex items-center justify-between gap-3">
@@ -110,33 +117,44 @@ export function SavedCombinationCard({
         </details>
       )}
       <section className="mt-3 border-t border-slate-100 pt-2.5">
-        {item.drawResults.length ? (
-          <details className="text-xs text-slate-600">
-            <summary className="cursor-pointer font-medium text-slate-500">
-              당첨 확인 이력 {item.drawResults.length}회
-            </summary>
-            <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto rounded-xl bg-slate-50 p-2.5">
-              {item.drawResults
-                .slice()
-                .reverse()
-                .map((result) => (
-                  <li
-                    key={result.roundNumber}
-                    className="flex flex-wrap justify-between gap-x-3"
-                  >
-                    <span>
-                      {result.roundNumber}회 ·{" "}
-                      {new Date(result.drawDate).toLocaleDateString("ko-KR")}
-                    </span>
-                    <span>
-                      {result.rank
-                        ? `${result.rank}등 · ${result.amountPerWinner.toLocaleString()}원`
-                        : "미당첨"}
-                    </span>
-                  </li>
-                ))}
-            </ul>
-          </details>
+        {latestResult ? (
+          <>
+            <p className="text-xs text-slate-600">
+              <span className="mr-1.5 font-semibold text-slate-500">
+                최근 결과
+              </span>
+              {latestResult.roundNumber}회 ·{" "}
+              {latestResult.rank
+                ? `${latestResult.rank}등 · ${latestResult.amountPerWinner.toLocaleString()}원`
+                : "미당첨"}
+            </p>
+            <details className="mt-2 text-xs text-slate-600">
+              <summary className="cursor-pointer font-medium text-slate-500">
+                당첨 확인 이력 {item.drawResults.length}회
+              </summary>
+              <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto rounded-xl bg-slate-50 p-2.5">
+                {item.drawResults
+                  .slice()
+                  .reverse()
+                  .map((result) => (
+                    <li
+                      key={result.roundNumber}
+                      className="flex flex-wrap justify-between gap-x-3"
+                    >
+                      <span>
+                        {result.roundNumber}회 ·{" "}
+                        {new Date(result.drawDate).toLocaleDateString("ko-KR")}
+                      </span>
+                      <span>
+                        {result.rank
+                          ? `${result.rank}등 · ${result.amountPerWinner.toLocaleString()}원`
+                          : "미당첨"}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </details>
+          </>
         ) : (
           <p className="text-xs text-slate-500">다음 추첨 결과부터 확인해요.</p>
         )}

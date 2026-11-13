@@ -17,8 +17,10 @@ vi.mock("@/features/auth/server/current-session", () => ({
   getCurrentUser: getCurrentUserMock,
 }));
 vi.mock("@/entities/lottery-draw", () => ({
-  runLotteryDrawSync: syncLotteryDrawsMock,
   LOTTERY_DRAW_HISTORY_CACHE_TAG: "lottery-draw-history",
+}));
+vi.mock("@/entities/saved-combination", () => ({
+  syncAndReconcileSavedCombinationDrawResults: syncLotteryDrawsMock,
 }));
 vi.mock("@/features/analysis", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/analysis")>()),
