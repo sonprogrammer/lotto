@@ -32,9 +32,9 @@ export function SavedCombinationCard({
     );
   const title = item.source === "manual" ? "직접 저장" : "AI 추천 저장";
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <label className="flex items-center gap-3 font-semibold">
+    <article className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4">
+      <div className="flex items-center justify-between gap-3">
+        <label className="flex min-w-0 items-center gap-2.5 text-sm font-semibold">
           <input
             type="checkbox"
             checked={selected}
@@ -43,14 +43,14 @@ export function SavedCombinationCard({
             aria-label={`${item.numbers.join(", ")} 선택`}
           />
           {title}
-          <span className="text-xs font-normal text-slate-500">
+          <span className="truncate text-xs font-normal text-slate-500">
             {item.trackingStartRound}회차부터 비교
           </span>
         </label>
         <div className="flex gap-2">
           <button
             type="button"
-            className="rounded-full px-3 py-1 text-sm text-blue-700 hover:bg-blue-50"
+            className="rounded-full px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
             disabled={busy}
             onClick={() => {
               if (!editing) setNumbers(item.numbers);
@@ -61,7 +61,7 @@ export function SavedCombinationCard({
           </button>
           <button
             type="button"
-            className="rounded-full px-3 py-1 text-sm text-rose-700 hover:bg-rose-50"
+            className="rounded-full px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50"
             disabled={busy}
             onClick={() => onDelete(item.id)}
           >
@@ -93,45 +93,52 @@ export function SavedCombinationCard({
           </button>
         </div>
       ) : (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {item.numbers.map((number) => (
-            <LottoNumberBall key={number} number={number} size="result" />
+            <LottoNumberBall key={number} number={number} size="compact" />
           ))}
         </div>
       )}
       {item.analysisSummary && (
-        <p className="mt-4 rounded-2xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">
-          {item.analysisSummary}
-        </p>
-      )}
-      <section className="mt-5 border-t border-slate-100 pt-4">
-        <h3 className="font-semibold">당첨 확인</h3>
-        {item.drawResults.length ? (
-          <ul className="mt-2 space-y-2">
-            {item.drawResults
-              .slice()
-              .reverse()
-              .map((result) => (
-                <li
-                  key={result.roundNumber}
-                  className="flex flex-wrap justify-between gap-x-4 text-sm text-slate-600"
-                >
-                  <span>
-                    {result.roundNumber}회 ·{" "}
-                    {new Date(result.drawDate).toLocaleDateString("ko-KR")}
-                  </span>
-                  <span>
-                    {result.rank
-                      ? `${result.rank}등 · ${result.amountPerWinner.toLocaleString()}원`
-                      : "미당첨"}
-                  </span>
-                </li>
-              ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-sm text-slate-500">
-            다음 추첨 결과부터 확인해요.
+        <details className="mt-2.5 text-xs text-slate-600">
+          <summary className="cursor-pointer font-medium text-slate-500">
+            AI 설명 보기
+          </summary>
+          <p className="mt-2 rounded-xl bg-slate-50 p-3 leading-5">
+            {item.analysisSummary}
           </p>
+        </details>
+      )}
+      <section className="mt-3 border-t border-slate-100 pt-2.5">
+        {item.drawResults.length ? (
+          <details className="text-xs text-slate-600">
+            <summary className="cursor-pointer font-medium text-slate-500">
+              당첨 확인 이력 {item.drawResults.length}회
+            </summary>
+            <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto rounded-xl bg-slate-50 p-2.5">
+              {item.drawResults
+                .slice()
+                .reverse()
+                .map((result) => (
+                  <li
+                    key={result.roundNumber}
+                    className="flex flex-wrap justify-between gap-x-3"
+                  >
+                    <span>
+                      {result.roundNumber}회 ·{" "}
+                      {new Date(result.drawDate).toLocaleDateString("ko-KR")}
+                    </span>
+                    <span>
+                      {result.rank
+                        ? `${result.rank}등 · ${result.amountPerWinner.toLocaleString()}원`
+                        : "미당첨"}
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          </details>
+        ) : (
+          <p className="text-xs text-slate-500">다음 추첨 결과부터 확인해요.</p>
         )}
       </section>
     </article>

@@ -1,6 +1,6 @@
 import { getLottoNumberTone } from "@/shared/lib/get-lotto-number-tone";
 
-type NumberBallSize = "picker" | "result" | "selected";
+type NumberBallSize = "picker" | "result" | "selected" | "compact";
 type CommonProps = {
   number: number;
   size?: NumberBallSize;
@@ -22,6 +22,7 @@ type ButtonProps = CommonProps & {
 function getSizeClass(size: NumberBallSize) {
   if (size === "picker") return "aspect-square w-full max-w-12 text-sm";
   if (size === "selected") return "size-12 text-sm";
+  if (size === "compact") return "size-8 text-xs";
   return "size-9 text-[13px]";
 }
 

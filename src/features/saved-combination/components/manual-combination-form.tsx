@@ -31,35 +31,35 @@ export function ManualCombinationForm({ userId }: Props) {
   };
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 lg:sticky lg:top-6">
+    <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">번호 직접 저장</h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <h2 className="text-lg font-semibold">번호 직접 저장</h2>
+          <p className="mt-1 text-xs text-slate-600">
             번호 6개를 고른 뒤 저장하세요.
           </p>
         </div>
         <Link
           href="/generate"
-          className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+          className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold hover:bg-slate-50"
         >
           AI 번호 생성하기
         </Link>
       </div>
-      <div className="mt-6">
+      <div className="mt-4">
         <SavedNumberPicker
           numbers={numbers}
           disabled={save.isPending}
           onToggle={toggle}
         />
       </div>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-sm text-slate-600">선택 {numbers.length}/6</span>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <span className="text-xs text-slate-600">선택 {numbers.length}/6</span>
         <button
           type="button"
           onClick={() => void submit()}
           disabled={numbers.length !== 6 || save.isPending}
-          className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
+          className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
         >
           {save.isPending ? "저장 중…" : "조합 저장"}
         </button>

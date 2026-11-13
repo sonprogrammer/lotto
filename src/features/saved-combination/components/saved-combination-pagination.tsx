@@ -16,7 +16,7 @@ export function SavedCombinationPagination({
   if (totalPages <= 1) return null;
   return (
     <nav
-      className="flex items-center justify-center gap-3 pt-2"
+      className="flex shrink-0 items-center justify-center gap-3 pt-2"
       aria-label="저장 조합 페이지 이동"
     >
       <button

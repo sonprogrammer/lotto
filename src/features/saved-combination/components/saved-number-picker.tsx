@@ -11,7 +11,7 @@ type Props = {
 export function SavedNumberPicker({ numbers, disabled, onToggle }: Props) {
   return (
     <div
-      className="grid grid-cols-5 gap-2 sm:grid-cols-9 lg:grid-cols-5 xl:grid-cols-6"
+      className="grid grid-cols-5 gap-2 sm:grid-cols-9"
       aria-label="번호 선택"
     >
       {Array.from({ length: 45 }, (_, index) => index + 1).map((number) => {
