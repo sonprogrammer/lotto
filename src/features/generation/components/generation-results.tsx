@@ -1,15 +1,9 @@
 import type { GenerationResult } from "../hooks/use-generate-combinations";
 import { GenerationStatistics } from "./generation-statistics";
+import { SaveGeneratedCombination } from "./save-generated-combination";
+import { LottoNumberBall } from "@/shared/ui/lotto-number-ball";
 
-type Props = { result: GenerationResult };
-
-function getNumberTone(number: number) {
-  if (number <= 10) return "gold";
-  if (number <= 20) return "blue";
-  if (number <= 30) return "red";
-  if (number <= 40) return "gray";
-  return "green";
-}
+type Props = { result: GenerationResult; userId: string };
 
 function constraintLabels(result: GenerationResult) {
   const constraints = result.appliedConstraints;
@@ -36,7 +30,7 @@ function constraintLabels(result: GenerationResult) {
   return labels.length ? labels : ["기본 통계 규칙"];
 }
 
-export function GenerationResults({ result }: Props) {
+export function GenerationResults({ result, userId }: Props) {
   const periodLabel =
     result.period.type === "all"
       ? "전체 회차"
@@ -62,7 +56,7 @@ export function GenerationResults({ result }: Props) {
       <ol className="generation-combinations">
         {result.combinations.map(({ numbers }, index) => (
           <li
-            className="generation-combination"
+            className="generation-combination flex-wrap"
             key={`${result.seed}-${index}`}
           >
             <span className="generation-combination-index">
@@ -74,14 +68,14 @@ export function GenerationResults({ result }: Props) {
               aria-label={`${index + 1}번 조합: ${numbers.join(", ")}`}
             >
               {numbers.map((number) => (
-                <span
-                  className={`generation-number lotto-ball-${getNumberTone(number)}`}
-                  key={number}
-                >
-                  {number}
-                </span>
+                <LottoNumberBall key={number} number={number} size="result" />
               ))}
             </div>
+            <SaveGeneratedCombination
+              userId={userId}
+              numbers={numbers}
+              analysisSummary={result.explanation}
+            />
           </li>
         ))}
       </ol>

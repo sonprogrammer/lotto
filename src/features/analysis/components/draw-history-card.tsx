@@ -1,3 +1,4 @@
+import { getLottoNumberTone } from "@/shared/lib/get-lotto-number-tone";
 import type { LotteryDrawHistoryRow } from "../hooks/use-lottery-draw-history";
 
 type DrawHistoryCardProps = {
@@ -17,14 +18,6 @@ function formatPrize(amount: number) {
   return `${new Intl.NumberFormat("ko-KR").format(amount)}원`;
 }
 
-function getNumberTone(number: number) {
-  if (number <= 10) return "gold";
-  if (number <= 20) return "blue";
-  if (number <= 30) return "red";
-  if (number <= 40) return "gray";
-  return "green";
-}
-
 export function DrawHistoryCard({ draw }: DrawHistoryCardProps) {
   return (
     <li className="draw-history-item">
@@ -39,7 +32,7 @@ export function DrawHistoryCard({ draw }: DrawHistoryCardProps) {
         >
           {draw.numbers.map((number) => (
             <li
-              className={`history-ball lotto-ball-${getNumberTone(number)}`}
+              className={`history-ball lotto-ball-${getLottoNumberTone(number)}`}
               key={number}
             >
               {number}
