@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { SavedCombination } from "@/entities/saved-combination/model/combination";
+import { LottoNumberBall } from "@/shared/ui/lotto-number-ball";
 import { SavedNumberPicker } from "./saved-number-picker";
 
 type Props = {
@@ -37,6 +38,7 @@ export function SavedCombinationCard({
           <input
             type="checkbox"
             checked={selected}
+            disabled={busy}
             onChange={() => onSelect(item.id)}
             aria-label={`${item.numbers.join(", ")} 선택`}
           />
@@ -49,6 +51,7 @@ export function SavedCombinationCard({
           <button
             type="button"
             className="rounded-full px-3 py-1 text-sm text-blue-700 hover:bg-blue-50"
+            disabled={busy}
             onClick={() => {
               if (!editing) setNumbers(item.numbers);
               setEditing((value) => !value);
@@ -59,6 +62,7 @@ export function SavedCombinationCard({
           <button
             type="button"
             className="rounded-full px-3 py-1 text-sm text-rose-700 hover:bg-rose-50"
+            disabled={busy}
             onClick={() => onDelete(item.id)}
           >
             삭제
@@ -91,12 +95,7 @@ export function SavedCombinationCard({
       ) : (
         <div className="mt-4 flex flex-wrap gap-2">
           {item.numbers.map((number) => (
-            <span
-              key={number}
-              className="grid size-10 place-items-center rounded-full bg-slate-100 font-semibold"
-            >
-              {number}
-            </span>
+            <LottoNumberBall key={number} number={number} size="result" />
           ))}
         </div>
       )}

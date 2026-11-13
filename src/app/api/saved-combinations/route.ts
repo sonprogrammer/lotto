@@ -7,17 +7,28 @@ import {
   deleteSavedCombinations,
   listSavedCombinations,
 } from "@/entities/saved-combination/server/store";
+import { SAVED_COMBINATIONS_PAGE_SIZE } from "@/entities/saved-combination/model/page";
 import { getCurrentUser } from "@/features/auth/server/current-session";
 import {
   privateJson,
   privateNoContent,
 } from "@/shared/server/http/private-json";
 
-export async function GET() {
+export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) return privateJson({ error: "로그인이 필요해요." }, 401);
+  const pageValue = new URL(request.url).searchParams.get("page") ?? "1";
+  const page = Number(pageValue);
+  if (!Number.isSafeInteger(page) || page < 1)
+    return privateJson({ error: "페이지 값을 확인해 주세요." }, 400);
   try {
-    return privateJson(await listSavedCombinations(user.userId));
+    return privateJson(
+      await listSavedCombinations(
+        user.userId,
+        page,
+        SAVED_COMBINATIONS_PAGE_SIZE,
+      ),
+    );
   } catch {
     return privateJson({ error: "저장한 번호를 불러오지 못했어요." }, 500);
   }

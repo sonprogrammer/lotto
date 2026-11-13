@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SiteHeader } from "@/widgets/site-header/ui/site-header";
+import { getLottoNumberTone } from "@/shared/lib/get-lotto-number-tone";
 import { generateLottoNumbers } from "../lib/generate-lotto-numbers";
 
 const NUMBER_COUNT = 6;
@@ -14,14 +15,6 @@ type LottoNumberPreviewProps = {
   isConfigured?: boolean;
   isSignedIn?: boolean;
 };
-
-function getBallColor(number: number | undefined) {
-  if (number === undefined || number <= 10) return "gold";
-  if (number <= 20) return "blue";
-  if (number <= 30) return "red";
-  if (number <= 40) return "gray";
-  return "green";
-}
 
 export function LottoNumberPreview({
   displayName,
@@ -131,7 +124,7 @@ export function LottoNumberPreview({
 
               return (
                 <div
-                  className={`lotto-ball lotto-ball-${getBallColor(isRevealed ? number : undefined)}`}
+                  className={`lotto-ball lotto-ball-${getLottoNumberTone(isRevealed ? number : undefined)}`}
                   key={index}
                   role="img"
                   aria-label={`${index + 1}번 공, ${isRevealed ? `숫자 ${number}` : isRolling ? "숫자 섞는 중" : "숫자 대기"}`}

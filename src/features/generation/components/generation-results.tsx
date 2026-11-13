@@ -1,16 +1,9 @@
 import type { GenerationResult } from "../hooks/use-generate-combinations";
 import { GenerationStatistics } from "./generation-statistics";
 import { SaveGeneratedCombination } from "./save-generated-combination";
+import { LottoNumberBall } from "@/shared/ui/lotto-number-ball";
 
 type Props = { result: GenerationResult; userId: string };
-
-function getNumberTone(number: number) {
-  if (number <= 10) return "gold";
-  if (number <= 20) return "blue";
-  if (number <= 30) return "red";
-  if (number <= 40) return "gray";
-  return "green";
-}
 
 function constraintLabels(result: GenerationResult) {
   const constraints = result.appliedConstraints;
@@ -75,12 +68,7 @@ export function GenerationResults({ result, userId }: Props) {
               aria-label={`${index + 1}번 조합: ${numbers.join(", ")}`}
             >
               {numbers.map((number) => (
-                <span
-                  className={`generation-number lotto-ball-${getNumberTone(number)}`}
-                  key={number}
-                >
-                  {number}
-                </span>
+                <LottoNumberBall key={number} number={number} size="result" />
               ))}
             </div>
             <SaveGeneratedCombination

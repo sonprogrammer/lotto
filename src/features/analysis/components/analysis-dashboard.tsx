@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { getLottoNumberTone } from "@/shared/lib/get-lotto-number-tone";
 import { SiteHeader } from "@/widgets/site-header";
 import { useRunWeeklyAnalysis } from "../hooks/use-run-weekly-analysis";
 import type { AnalysisPeriod } from "../model/analysis-period";
@@ -12,14 +13,6 @@ type AnalysisDashboardProps = {
   displayName?: string;
   userId: string;
 };
-
-function getNumberTone(number: number) {
-  if (number <= 10) return "gold";
-  if (number <= 20) return "blue";
-  if (number <= 30) return "red";
-  if (number <= 40) return "gray";
-  return "green";
-}
 
 export function AnalysisDashboard({
   displayName,
@@ -185,7 +178,7 @@ export function AnalysisDashboard({
                       aria-label={`${number}번, 출현 ${count}회`}
                     >
                       <span
-                        className={`frequency-ball lotto-ball-${getNumberTone(number)}`}
+                        className={`frequency-ball lotto-ball-${getLottoNumberTone(number)}`}
                         aria-hidden="true"
                       >
                         {number}

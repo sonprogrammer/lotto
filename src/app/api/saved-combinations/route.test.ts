@@ -26,8 +26,12 @@ const combination = {
   source: "manual",
   numbers: [1, 2, 3, 4, 5, 6],
 };
-const request = (method: string, body?: unknown) =>
-  new Request("http://localhost/api/saved-combinations", {
+const request = (
+  method: string,
+  body?: unknown,
+  url = "http://localhost/api/saved-combinations",
+) =>
+  new Request(url, {
     method,
     ...(body
       ? {
@@ -40,21 +44,27 @@ const request = (method: string, body?: unknown) =>
 beforeEach(() => {
   vi.clearAllMocks();
   getCurrentUserMock.mockResolvedValue(user);
-  listMock.mockResolvedValue([combination]);
+  listMock.mockResolvedValue({
+    items: [combination],
+    page: 1,
+    pageSize: 10,
+    total: 1,
+    totalPages: 1,
+  });
   createMock.mockResolvedValue(combination);
   deleteManyMock.mockResolvedValue(1);
 });
 
 it("lists only the signed-in user's combinations with private cache headers", async () => {
-  const response = await GET();
+  const response = await GET(request("GET"));
   expect(response.status).toBe(200);
   expect(response.headers.get("Cache-Control")).toContain("no-store");
-  expect(listMock).toHaveBeenCalledWith(user.userId);
+  expect(listMock).toHaveBeenCalledWith(user.userId, 1, 10);
 });
 
 it("requires authentication for all saved-combination operations", async () => {
   getCurrentUserMock.mockResolvedValue(null);
-  expect((await GET()).status).toBe(401);
+  expect((await GET(request("GET"))).status).toBe(401);
   expect(
     (
       await POST(
@@ -65,6 +75,22 @@ it("requires authentication for all saved-combination operations", async () => {
   expect((await DELETE(request("DELETE", { all: true }))).status).toBe(401);
   expect(createMock).not.toHaveBeenCalled();
   expect(deleteManyMock).not.toHaveBeenCalled();
+});
+
+it("rejects invalid page numbers", async () => {
+  const response = await GET(
+    request("GET", undefined, "http://localhost/api/saved-combinations?page=0"),
+  );
+  expect(response.status).toBe(400);
+  expect(listMock).not.toHaveBeenCalled();
+});
+
+it("passes the requested page and fixed page size to the user-scoped store", async () => {
+  const response = await GET(
+    request("GET", undefined, "http://localhost/api/saved-combinations?page=2"),
+  );
+  expect(response.status).toBe(200);
+  expect(listMock).toHaveBeenCalledWith(user.userId, 2, 10);
 });
 
 it("creates a valid manually selected combination for the current user", async () => {

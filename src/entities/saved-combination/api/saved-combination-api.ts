@@ -1,5 +1,6 @@
 import type { SavedCombination } from "@/entities/saved-combination/model/combination";
 import type { SavedCombinationCreate } from "@/entities/saved-combination/model/input";
+import type { SavedCombinationsPage } from "@/entities/saved-combination/model/page";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -16,8 +17,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export const fetchSavedCombinations = () =>
-  request<SavedCombination[]>("/api/saved-combinations");
+export const fetchSavedCombinations = (page: number) =>
+  request<SavedCombinationsPage>(`/api/saved-combinations?page=${page}`);
 export const createSavedCombinationRequest = (input: SavedCombinationCreate) =>
   request<SavedCombination>("/api/saved-combinations", {
     method: "POST",

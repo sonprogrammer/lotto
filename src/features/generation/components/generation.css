@@ -43,48 +43,6 @@
   grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 8px;
 }
-.generation-picker button {
-  display: grid;
-  width: min(100%, 48px);
-  aspect-ratio: 1;
-  place-items: center;
-  justify-self: center;
-  border: 0;
-  border-radius: 50%;
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 750;
-  box-shadow:
-    inset 0 3px 5px rgb(255 255 255 / 75%),
-    inset 0 -3px 6px rgb(30 45 65 / 14%),
-    0 4px 8px rgb(38 56 80 / 15%);
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    opacity 160ms ease;
-}
-.generation-picker button:hover:not(:disabled) {
-  transform: translateY(-2px) scale(1.06);
-  box-shadow:
-    inset 0 3px 5px rgb(255 255 255 / 75%),
-    inset 0 -3px 6px rgb(30 45 65 / 14%),
-    0 7px 12px rgb(38 56 80 / 20%);
-}
-.generation-picker button[aria-pressed="true"] {
-  outline: 3px solid #263d5e;
-  outline-offset: 2px;
-  box-shadow:
-    inset 0 3px 5px rgb(255 255 255 / 70%),
-    inset 0 -3px 6px rgb(30 45 65 / 16%),
-    0 0 0 5px rgb(55 87 124 / 13%),
-    0 6px 13px rgb(38 56 80 / 18%);
-  transform: scale(1.04);
-}
-.generation-picker button:disabled {
-  cursor: not-allowed;
-  opacity: 0.42;
-}
 .generation-selected-numbers {
   margin-top: 18px;
   padding: 15px 16px 13px;
@@ -127,10 +85,6 @@
   position: relative;
   width: 48px;
   height: 48px;
-}
-.generation-selected-ball {
-  width: 48px;
-  font-size: 14px;
 }
 .generation-selected-remove {
   position: absolute;
@@ -340,19 +294,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-.generation-number {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-weight: 700;
-  font-size: 13px;
-  box-shadow:
-    inset 0 2px 4px rgb(255 255 255 / 68%),
-    inset 0 -3px 5px rgb(34 47 66 / 13%),
-    0 3px 7px rgb(36 52 73 / 12%);
 }
 .generation-result-details {
   display: grid;

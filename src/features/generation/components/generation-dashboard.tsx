@@ -2,6 +2,7 @@
 
 import { SiteHeader } from "@/widgets/site-header";
 import { useSavedPrompts } from "@/features/saved-prompt/hooks/use-saved-prompts";
+import { LottoNumberBall } from "@/shared/ui/lotto-number-ball";
 import { useGenerationForm } from "../hooks/use-generation-form";
 import { GenerationResults } from "./generation-results";
 import { GenerationPromptControl } from "./generation-prompt-control";
@@ -9,14 +10,6 @@ import { SelectedNumberList } from "./selected-number-list";
 import "./generation.css";
 
 type Props = { displayName?: string; userId: string };
-
-function getNumberTone(number: number) {
-  if (number <= 10) return "gold";
-  if (number <= 20) return "blue";
-  if (number <= 30) return "red";
-  if (number <= 40) return "gray";
-  return "green";
-}
 
 export function GenerationDashboard({ displayName, userId }: Props) {
   const savedPromptsQuery = useSavedPrompts(userId);
@@ -72,21 +65,19 @@ export function GenerationDashboard({ displayName, userId }: Props) {
             <div className="generation-picker">
               {Array.from({ length: 45 }, (_, index) => index + 1).map(
                 (number) => (
-                  <button
-                    type="button"
+                  <LottoNumberBall
                     key={number}
-                    aria-label={`${number}번 고정`}
-                    aria-pressed={fixedNumbers.includes(number)}
-                    className={`generation-ball lotto-ball-${getNumberTone(number)}`}
+                    number={number}
+                    size="picker"
+                    label={`${number}번 고정`}
+                    selected={fixedNumbers.includes(number)}
                     disabled={
                       generation.isPending ||
                       (!fixedNumbers.includes(number) &&
                         fixedNumbers.length >= 6)
                     }
                     onClick={() => toggleNumber(number)}
-                  >
-                    {number}
-                  </button>
+                  />
                 ),
               )}
             </div>

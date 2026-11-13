@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { syncLotteryDraws } from "@/entities/lottery-draw";
 import { getMongoDb } from "@/shared/server/mongodb/client";
 import type { SavedCombination } from "../model/combination";
+import type { SavedCombinationsPage } from "../model/page";
 import type { SavedCombinationDocument } from "../model/document";
 import type { SavedCombinationCreate } from "../model/input";
 import { serializeSavedCombination } from "./serialize-combination";
@@ -16,14 +17,27 @@ function getCollection() {
 
 export async function listSavedCombinations(
   userId: string,
-): Promise<SavedCombination[]> {
+  page: number,
+  pageSize: number,
+): Promise<SavedCombinationsPage> {
   const collection = await getCollection();
   await collection.createIndex({ userId: 1, createdAt: -1 });
+  const total = await collection.countDocuments({ userId });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const resolvedPage = Math.min(page, totalPages);
   const documents = await collection
     .find({ userId })
     .sort({ createdAt: -1, _id: -1 })
+    .skip((resolvedPage - 1) * pageSize)
+    .limit(pageSize)
     .toArray();
-  return documents.map(serializeSavedCombination);
+  return {
+    items: documents.map(serializeSavedCombination),
+    page: resolvedPage,
+    pageSize,
+    total,
+    totalPages,
+  };
 }
 
 export async function createSavedCombination(

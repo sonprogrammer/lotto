@@ -1,16 +1,10 @@
+import { LottoNumberBall } from "@/shared/ui/lotto-number-ball";
+
 type Props = {
   numbers: number[];
   disabled: boolean;
   onRemove: (number: number) => void;
 };
-
-function getNumberTone(number: number) {
-  if (number <= 10) return "gold";
-  if (number <= 20) return "blue";
-  if (number <= 30) return "red";
-  if (number <= 40) return "gray";
-  return "green";
-}
 
 export function SelectedNumberList({ numbers, disabled, onRemove }: Props) {
   return (
@@ -27,11 +21,7 @@ export function SelectedNumberList({ numbers, disabled, onRemove }: Props) {
         <ul>
           {numbers.map((number) => (
             <li className="generation-selected-item" key={number}>
-              <span
-                className={`lotto-ball generation-selected-ball lotto-ball-${getNumberTone(number)}`}
-              >
-                {number}
-              </span>
+              <LottoNumberBall number={number} size="selected" />
               <button
                 className="generation-selected-remove"
                 type="button"
