@@ -76,6 +76,53 @@ describe("getGroqRecommendation", () => {
     expect(options.signal).toBeInstanceOf(AbortSignal);
   });
 
+  it("instructs Groq to return every user-facing phrase in Korean", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(groqResponse(recommendation)),
+    );
+
+    await getGroqRecommendation(input);
+
+    const [, options] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    const body = JSON.parse(options.body as string);
+    expect(body.messages[0].content).toContain(
+      "반드시 자연스러운 한국어로 작성",
+    );
+    expect(body.messages[0].content).toContain(
+      "영문 단어, 영문 알파벳, 로마자 표기를 포함하지 마세요",
+    );
+  });
+
+  it.each([
+    {
+      explanation: "Based on recent frequency, these criteria were applied.",
+      unsupportedConditions: ["생일에 맞는 번호"],
+    },
+    {
+      explanation: "최근 출현 빈도를 참고했습니다.",
+      unsupportedConditions: ["Birthday-based picks"],
+    },
+    {
+      explanation: "최근 출현 frequency를 참고했습니다.",
+      unsupportedConditions: [],
+    },
+  ])("rejects non-Korean user-facing text from Groq", async (phrases) => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(groqResponse({ ...recommendation, ...phrases })),
+    );
+
+    await expect(getGroqRecommendation(input)).rejects.toMatchObject({
+      kind: "invalid-response",
+    });
+  });
+
   it("does not call Groq without a server key", async () => {
     vi.stubEnv("GROQ_API_KEY", "");
     const fetchMock = vi.fn();

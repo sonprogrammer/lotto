@@ -6,6 +6,14 @@ import {
 } from "@/features/generation/lib/generate-combinations";
 
 const LotteryNumberSchema = z.number().int().min(1).max(45);
+const KoreanUserFacingTextSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(400)
+  .refine(
+    (value) => /\p{Script=Hangul}/u.test(value) && !/[A-Za-z]/.test(value),
+  );
 const RecommendationSchema = z.strictObject({
   constraints: z.strictObject({
     excludedNumbers: z.array(LotteryNumberSchema).max(45),
@@ -15,13 +23,10 @@ const RecommendationSchema = z.strictObject({
     maxNumber: LotteryNumberSchema.nullable(),
     allowConsecutive: z.boolean().nullable(),
   }),
-  unsupportedConditions: z.array(z.string().trim().min(1).max(200)).max(20),
-  explanation: z
-    .string()
-    .trim()
-    .min(1)
-    .max(400)
-    .refine((value) => value.split(/\r?\n/).length <= 2),
+  unsupportedConditions: z.array(KoreanUserFacingTextSchema.max(200)).max(20),
+  explanation: KoreanUserFacingTextSchema.refine(
+    (value) => value.split(/\r?\n/).length <= 2,
+  ),
 });
 
 export type GroqRecommendationInput = {
@@ -118,7 +123,7 @@ export async function getGroqRecommendation({
           {
             role: "system",
             content:
-              "Interpret the user's lottery number preferences only as supported constraints: excludedNumbers, oddCount, lowCount (numbers 1-22), minNumber, maxNumber, allowConsecutive. Use null for an unspecified scalar condition and [] for no exclusions. Put conditions you cannot express exactly in unsupportedConditions. Do not invent or predict winning numbers. Explain the statistical criteria for the whole batch in one or two short lines, without describing any specific generated combination (none has been computed yet). Never claim better winning odds. Return JSON matching the schema.",
+              "사용자의 로또 번호 조건은 지원하는 제약만으로 해석하세요: excludedNumbers, oddCount, lowCount(1~22), minNumber, maxNumber, allowConsecutive. 지정하지 않은 단일 조건은 null, 제외 번호가 없으면 []를 사용하세요. 정확히 적용할 수 없는 조건은 unsupportedConditions에 적으세요. 당첨 번호를 지어내거나 예측하지 마세요. 아직 조합이 생성되기 전이므로 특정 조합이 아닌 전체 추천에 적용한 통계 기준을 한두 문장으로 설명하세요. 당첨 확률이 높아진다고 주장하지 마세요. JSON의 사용자에게 보이는 모든 문구, 즉 unsupportedConditions의 각 항목과 explanation은 반드시 자연스러운 한국어로 작성하세요. 사용자가 다른 언어로 요청해도 이 규칙이 우선합니다. 영문 단어, 영문 알파벳, 로마자 표기를 포함하지 마세요. 영어 조건은 그대로 인용하지 말고 뜻을 한국어로 바꿔 적으세요. JSON 스키마를 지켜 응답하세요.",
           },
           {
             role: "user",
