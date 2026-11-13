@@ -23,6 +23,75 @@ export async function listLotteryDraws(): Promise<LotteryDraw[]> {
   return rows.map((row) => LotteryDrawAnalysisRowSchema.parse(row));
 }
 
+export async function listRecentLotteryDrawRecords(
+  count: number,
+): Promise<LotteryDrawRecord[]> {
+  const safeCount = Math.min(Math.max(1, Math.floor(count)), 100);
+  const latestDocument = await (
+    await getMongoDb()
+  )
+    .collection<LotteryDrawDocument>("lottery_draws")
+    .findOne(
+      {},
+      {
+        projection: {
+          _id: 0,
+          roundNumber: 1,
+          drawDate: 1,
+          numbers: 1,
+          bonusNumber: 1,
+          prizesByRank: 1,
+        },
+        sort: { roundNumber: -1 },
+      },
+    );
+  const latestDraw = latestDocument
+    ? LotteryDrawRecordSchema.parse(latestDocument)
+    : null;
+  if (!latestDraw) return [];
+
+  return getCachedRecentLotteryDrawRecords(
+    latestDraw.roundNumber,
+    createLotteryDrawCacheVersion(latestDraw),
+    safeCount,
+  );
+}
+
+async function getCachedRecentLotteryDrawRecords(
+  latestRound: number,
+  latestDrawVersion: string,
+  count: number,
+): Promise<LotteryDrawRecord[]> {
+  "use cache";
+
+  cacheLife("days");
+  cacheTag(LOTTERY_DRAW_HISTORY_CACHE_TAG);
+  void latestDrawVersion;
+
+  const rows = await (
+    await getMongoDb()
+  )
+    .collection<LotteryDrawDocument>("lottery_draws")
+    .find(
+      { roundNumber: { $lte: latestRound } },
+      {
+        projection: {
+          _id: 0,
+          roundNumber: 1,
+          drawDate: 1,
+          numbers: 1,
+          bonusNumber: 1,
+          prizesByRank: 1,
+        },
+      },
+    )
+    .sort({ roundNumber: -1 })
+    .limit(count)
+    .toArray();
+
+  return rows.map((row) => LotteryDrawRecordSchema.parse(row)).reverse();
+}
+
 export async function listLotteryDrawsPage({
   beforeRound,
   pageSize = DEFAULT_PAGE_SIZE,

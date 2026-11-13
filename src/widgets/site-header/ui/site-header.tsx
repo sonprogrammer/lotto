@@ -42,6 +42,9 @@ export function SiteHeader({
             <Link className="analysis-link" href="/history">
               당첨 내역
             </Link>
+            <Link className="analysis-link" href="/simulation">
+              시뮬레이션
+            </Link>
             <Link className="analysis-link" href="/saved">
               저장한 번호
             </Link>

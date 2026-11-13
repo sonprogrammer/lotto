@@ -1,19 +1,31 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { listLotteryDraws, listLotteryDrawsPage } from "./list-lottery-draws";
+import {
+  listLotteryDraws,
+  listLotteryDrawsPage,
+  listRecentLotteryDrawRecords,
+} from "./list-lottery-draws";
 
-const { findMock, findOneMock, sortMock, limitMock, toArrayMock } = vi.hoisted(
-  () => ({
-    findMock: vi.fn(),
-    findOneMock: vi.fn(),
-    sortMock: vi.fn(),
-    limitMock: vi.fn(),
-    toArrayMock: vi.fn(),
-  }),
-);
+const {
+  findMock,
+  findOneMock,
+  sortMock,
+  limitMock,
+  toArrayMock,
+  cacheLifeMock,
+  cacheTagMock,
+} = vi.hoisted(() => ({
+  findMock: vi.fn(),
+  findOneMock: vi.fn(),
+  sortMock: vi.fn(),
+  limitMock: vi.fn(),
+  toArrayMock: vi.fn(),
+  cacheLifeMock: vi.fn(),
+  cacheTagMock: vi.fn(),
+}));
 
 vi.mock("next/cache", () => ({
-  cacheLife: vi.fn(),
-  cacheTag: vi.fn(),
+  cacheLife: cacheLifeMock,
+  cacheTag: cacheTagMock,
 }));
 vi.mock("@/shared/server/mongodb/client", () => ({
   getMongoDb: async () => ({
@@ -89,4 +101,55 @@ it("rejects invalid stored analysis rows", async () => {
   ]);
 
   await expect(listLotteryDraws()).rejects.toThrow();
+});
+
+it("loads recent complete draw records newest-first from the shared cache", async () => {
+  findOneMock.mockResolvedValue({
+    roundNumber: 100,
+    drawDate: new Date("2026-11-07T00:00:00.000Z"),
+    numbers: [1, 2, 3, 4, 5, 6],
+    bonusNumber: 7,
+    prizesByRank: [],
+  });
+  const rows = [
+    {
+      roundNumber: 100,
+      drawDate: new Date("2026-11-07T00:00:00.000Z"),
+      numbers: [1, 2, 3, 4, 5, 6],
+      bonusNumber: 7,
+      prizesByRank: [],
+    },
+    {
+      roundNumber: 99,
+      drawDate: new Date("2026-10-31T00:00:00.000Z"),
+      numbers: [2, 3, 4, 5, 6, 7],
+      bonusNumber: 8,
+      prizesByRank: [],
+    },
+  ];
+  toArrayMock.mockResolvedValue(rows);
+
+  const result = await listRecentLotteryDrawRecords(2);
+
+  expect(findOneMock).toHaveBeenCalledWith(
+    {},
+    expect.objectContaining({ sort: { roundNumber: -1 } }),
+  );
+  expect(findMock).toHaveBeenCalledWith(
+    { roundNumber: { $lte: 100 } },
+    expect.objectContaining({
+      projection: expect.objectContaining({ prizesByRank: 1 }),
+    }),
+  );
+  expect(sortMock).toHaveBeenCalledWith({ roundNumber: -1 });
+  expect(limitMock).toHaveBeenCalledWith(2);
+  expect(result.map(({ roundNumber }) => roundNumber)).toEqual([99, 100]);
+  expect(cacheLifeMock).toHaveBeenCalledWith("days");
+});
+
+it("clamps recent record reads to a safe count and returns empty when no draws exist", async () => {
+  findOneMock.mockResolvedValue(null);
+
+  await expect(listRecentLotteryDrawRecords(0)).resolves.toEqual([]);
+  expect(findMock).not.toHaveBeenCalled();
 });
