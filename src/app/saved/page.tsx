@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "저장한 로또 번호 조합과 당첨 결과를 관리합니다.",
 };
 
+export const instant = false;
+
 export default async function SavedCombinationsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/");
