@@ -195,7 +195,7 @@
   font-size: 13px;
 }
 .saved-prompt-form textarea {
-  resize: vertical;
+  resize: none;
   line-height: 1.6;
 }
 .saved-prompt-form [aria-invalid="true"] {
