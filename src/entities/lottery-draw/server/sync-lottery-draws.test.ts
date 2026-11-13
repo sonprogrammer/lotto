@@ -261,3 +261,31 @@ it("does not write data when the provider returns HTML", async () => {
   await expect(syncLotteryDraws()).rejects.toThrow();
   expect(bulkWriteMock).not.toHaveBeenCalled();
 });
+
+it("marks network and temporary server errors as retryable", async () => {
+  fetchMock.mockRejectedValueOnce(new Error("network unavailable"));
+  await expect(syncLotteryDraws()).rejects.toMatchObject({
+    code: "source_unavailable",
+    retryable: true,
+  });
+
+  fetchMock.mockResolvedValueOnce(new Response("", { status: 503 }));
+  await expect(syncLotteryDraws()).rejects.toMatchObject({
+    code: "source_unavailable",
+    retryable: true,
+  });
+});
+
+it("marks malformed provider data as non-retryable", async () => {
+  fetchMock.mockResolvedValueOnce(
+    new Response("{}", {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    }),
+  );
+
+  await expect(syncLotteryDraws()).rejects.toMatchObject({
+    retryable: false,
+  });
+  expect(bulkWriteMock).not.toHaveBeenCalled();
+});

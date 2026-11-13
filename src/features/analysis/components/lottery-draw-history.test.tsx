@@ -10,6 +10,21 @@ vi.stubGlobal("fetch", fetchMock);
 vi.mock("@/widgets/site-header", () => ({
   SiteHeader: () => <header>헤더</header>,
 }));
+vi.mock("../hooks/use-lottery-sync-status", () => ({
+  useLotterySyncStatus: () => ({
+    data: {
+      lastAttemptAt: "2026-11-14T12:00:00.000Z",
+      lastSuccessAt: "2026-11-14T12:00:00.000Z",
+      state: "success",
+      latestRound: 1249,
+      errorSummary: null,
+      nextExpectedAt: "2026-11-21T12:00:00.000Z",
+    },
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+}));
 
 const draw = {
   roundNumber: 1249,

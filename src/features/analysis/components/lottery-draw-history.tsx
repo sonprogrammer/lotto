@@ -4,6 +4,8 @@ import Link from "next/link";
 import { SiteHeader } from "@/widgets/site-header";
 import { DrawHistoryCard } from "./draw-history-card";
 import { useLotteryDrawHistory } from "../hooks/use-lottery-draw-history";
+import { useLotterySyncStatus } from "../hooks/use-lottery-sync-status";
+import { LotterySyncStatus } from "./lottery-sync-status";
 
 type LotteryDrawHistoryProps = {
   displayName?: string;
@@ -15,6 +17,7 @@ export function LotteryDrawHistory({
   userId,
 }: LotteryDrawHistoryProps) {
   const query = useLotteryDrawHistory();
+  const syncStatus = useLotterySyncStatus();
   const draws =
     query.data?.pages.flatMap(({ draws: pageDraws }) => pageDraws) ?? [];
 
@@ -33,6 +36,13 @@ export function LotteryDrawHistory({
           현재까지 공개된 회차의 당첨 번호와 등위별 당첨 정보를 확인할 수
           있어요.
         </p>
+
+        <LotterySyncStatus
+          status={syncStatus.data}
+          isPending={syncStatus.isPending}
+          isError={syncStatus.isError}
+          onRetry={() => void syncStatus.refetch()}
+        />
 
         {query.isPending ? (
           <div className="history-skeleton-list" role="status" aria-busy="true">

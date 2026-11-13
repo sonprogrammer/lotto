@@ -8,6 +8,17 @@ const ALL_DRAWS_URL =
 const LATEST_DRAW_URL =
   "https://www.dhlottery.co.kr/lt645/selectPstLt645Info.do";
 
+export class LotteryDrawSyncError extends Error {
+  constructor(
+    readonly code: "source_unavailable" | "invalid_response",
+    readonly retryable: boolean,
+    message: string = code,
+  ) {
+    super(message);
+    this.name = "LotteryDrawSyncError";
+  }
+}
+
 export async function syncLotteryDraws(): Promise<{
   drawCount: number;
   latestRound: number;
@@ -15,10 +26,16 @@ export async function syncLotteryDraws(): Promise<{
   changed: boolean;
 }> {
   const latestDrawResponse = await fetchLotteryDrawSource(LATEST_DRAW_URL);
-  const latestPublishedDraw = parseLotteryDrawSourceResponse(latestDrawResponse)
+  const latestPublishedDraw = parseSourceResponse(latestDrawResponse)
     .sort((left, right) => left.roundNumber - right.roundNumber)
     .at(-1);
-  if (!latestPublishedDraw) throw new Error("Latest lottery draw is missing");
+  if (!latestPublishedDraw) {
+    throw new LotteryDrawSyncError(
+      "invalid_response",
+      false,
+      "Latest lottery draw is missing",
+    );
+  }
   const latestRound = latestPublishedDraw.roundNumber;
 
   const db = await getMongoDb();
@@ -44,7 +61,9 @@ export async function syncLotteryDraws(): Promise<{
     : null;
 
   if (storedLatestDraw && storedLatestDraw.roundNumber > latestRound) {
-    throw new Error(
+    throw new LotteryDrawSyncError(
+      "invalid_response",
+      false,
       "Stored lottery history is newer than the provider response",
     );
   }
@@ -65,17 +84,23 @@ export async function syncLotteryDraws(): Promise<{
   }
 
   const allDrawsResponse = await fetchLotteryDrawSource(ALL_DRAWS_URL);
-  const draws = parseLotteryDrawSourceResponse(allDrawsResponse).sort(
+  const draws = parseSourceResponse(allDrawsResponse).sort(
     (left, right) => left.roundNumber - right.roundNumber,
   );
   if (
     draws.length !== latestRound ||
     draws.some(({ roundNumber }, index) => roundNumber !== index + 1)
   ) {
-    throw new Error("Lottery draw source returned an incomplete history");
+    throw new LotteryDrawSyncError(
+      "invalid_response",
+      false,
+      "Lottery draw source returned an incomplete history",
+    );
   }
   if (JSON.stringify(draws.at(-1)) !== JSON.stringify(latestPublishedDraw)) {
-    throw new Error(
+    throw new LotteryDrawSyncError(
+      "invalid_response",
+      false,
       "Lottery draw history does not match the latest published round",
     );
   }
@@ -100,15 +125,46 @@ export async function syncLotteryDraws(): Promise<{
 }
 
 async function fetchLotteryDrawSource(url: string): Promise<unknown> {
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (!response.ok) throw new Error("Lottery draw source request failed");
-  if (!response.headers.get("content-type")?.includes("application/json")) {
-    throw new Error("Lottery draw source returned a non-JSON response");
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    throw new LotteryDrawSyncError("source_unavailable", true);
   }
-  return response.json();
+
+  if (!response.ok) {
+    const retryable = response.status === 429 || response.status >= 500;
+    throw new LotteryDrawSyncError(
+      retryable ? "source_unavailable" : "invalid_response",
+      retryable,
+    );
+  }
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new LotteryDrawSyncError(
+      "invalid_response",
+      false,
+      "Lottery draw source returned a non-JSON response",
+    );
+  }
+  try {
+    return await response.json();
+  } catch {
+    throw new LotteryDrawSyncError("invalid_response", false);
+  }
+}
+
+function parseSourceResponse(input: unknown) {
+  try {
+    return parseLotteryDrawSourceResponse(input);
+  } catch (error) {
+    throw new LotteryDrawSyncError(
+      "invalid_response",
+      false,
+      error instanceof Error ? error.message : "Invalid lottery source data",
+    );
+  }
 }
