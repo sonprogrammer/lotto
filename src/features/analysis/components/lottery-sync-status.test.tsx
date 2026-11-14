@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import type { LotterySyncStatusResponse } from "../hooks/use-lottery-sync-status";
 import { LotterySyncStatus } from "./lottery-sync-status";
@@ -66,4 +66,43 @@ it("offers a retry if status could not be loaded", () => {
   );
   screen.getByRole("button", { name: "다시 확인" }).click();
   expect(retry).toHaveBeenCalledOnce();
+});
+
+it("offers manual sync and reports loading, unchanged and error states", () => {
+  const sync = vi.fn();
+  const props = {
+    status: baseStatus,
+    isPending: false,
+    isError: false,
+    onRetry: vi.fn(),
+    isSyncing: false,
+    syncMessage: null,
+    syncErrorMessage: null,
+    onSync: sync,
+  };
+  const { rerender } = render(<LotterySyncStatus {...props} />);
+
+  fireEvent.click(screen.getByRole("button", { name: "당첨 번호 확인" }));
+  expect(sync).toHaveBeenCalledOnce();
+
+  rerender(<LotterySyncStatus {...props} isSyncing />);
+  expect(screen.getByRole("button", { name: "확인 중..." })).toBeDisabled();
+
+  rerender(
+    <LotterySyncStatus
+      {...props}
+      syncMessage="새로 반영된 결과가 없어요. 현재 1249회까지 확인했어요."
+    />,
+  );
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "새로 반영된 결과가 없어요",
+  );
+
+  rerender(
+    <LotterySyncStatus
+      {...props}
+      syncErrorMessage="당첨 번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요."
+    />,
+  );
+  expect(screen.getByRole("alert")).toHaveTextContent("다시 시도해 주세요");
 });

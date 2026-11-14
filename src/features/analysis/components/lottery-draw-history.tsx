@@ -5,6 +5,7 @@ import { SiteHeader } from "@/widgets/site-header";
 import { DrawHistoryCard } from "./draw-history-card";
 import { useLotteryDrawHistory } from "../hooks/use-lottery-draw-history";
 import { useLotterySyncStatus } from "../hooks/use-lottery-sync-status";
+import { useManualLotterySync } from "../hooks/use-manual-lottery-sync";
 import { LotterySyncStatus } from "./lottery-sync-status";
 
 type LotteryDrawHistoryProps = {
@@ -18,6 +19,7 @@ export function LotteryDrawHistory({
 }: LotteryDrawHistoryProps) {
   const query = useLotteryDrawHistory();
   const syncStatus = useLotterySyncStatus();
+  const manualSync = useManualLotterySync();
   const draws =
     query.data?.pages.flatMap(({ draws: pageDraws }) => pageDraws) ?? [];
 
@@ -42,6 +44,10 @@ export function LotteryDrawHistory({
           isPending={syncStatus.isPending}
           isError={syncStatus.isError}
           onRetry={() => void syncStatus.refetch()}
+          isSyncing={manualSync.isPending}
+          syncMessage={manualSync.message}
+          syncErrorMessage={manualSync.errorMessage}
+          onSync={manualSync.sync}
         />
 
         {query.isPending ? (
