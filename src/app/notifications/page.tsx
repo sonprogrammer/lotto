@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { NotificationDashboard } from "@/features/notification/components/notification-dashboard";
 import { getCurrentUser } from "@/features/auth/server/current-session";
 
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export const instant = false;
 
 export default async function NotificationsPage() {
+  await connection();
   const user = await getCurrentUser();
   if (!user) redirect("/");
   return (

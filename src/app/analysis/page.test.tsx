@@ -1,10 +1,12 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-const { getCurrentUserMock, redirectMock } = vi.hoisted(() => ({
+const { connectionMock, getCurrentUserMock, redirectMock } = vi.hoisted(() => ({
+  connectionMock: vi.fn().mockResolvedValue(undefined),
   getCurrentUserMock: vi.fn(),
   redirectMock: vi.fn(),
 }));
 
+vi.mock("next/server", () => ({ connection: connectionMock }));
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
 }));

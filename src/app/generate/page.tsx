@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { getCurrentUser } from "@/features/auth/server/current-session";
 import { GenerationDashboard } from "@/features/generation/components/generation-dashboard";
 
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export const instant = false;
 
 export default async function GeneratePage() {
+  await connection();
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/");
   return (

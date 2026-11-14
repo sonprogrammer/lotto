@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import type { Collection } from "mongodb";
 import { getMongoDb } from "@/shared/server/mongodb/client";
 import {
   AppSessionDocumentSchema,
@@ -9,15 +10,27 @@ const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 const hashToken = (token: string) =>
   createHash("sha256").update(token).digest("hex");
 
-async function getSessionCollection() {
-  const collection = (await getMongoDb()).collection<AppSessionDocument>(
-    "appSessions",
-  );
-  await Promise.all([
-    collection.createIndex({ tokenHash: 1 }, { unique: true }),
-    collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-  ]);
-  return collection;
+let sessionCollectionPromise:
+  Promise<Collection<AppSessionDocument>> | undefined;
+
+function getSessionCollection(): Promise<Collection<AppSessionDocument>> {
+  if (!sessionCollectionPromise) {
+    sessionCollectionPromise = (async () => {
+      const collection = (await getMongoDb()).collection<AppSessionDocument>(
+        "appSessions",
+      );
+      await Promise.all([
+        collection.createIndex({ tokenHash: 1 }, { unique: true }),
+        collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      ]);
+      return collection;
+    })().catch((error: unknown) => {
+      sessionCollectionPromise = undefined;
+      throw error;
+    });
+  }
+
+  return sessionCollectionPromise;
 }
 
 export async function createAppSession(

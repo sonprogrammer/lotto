@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { LotteryDrawHistory } from "@/features/analysis/components/lottery-draw-history";
 import { getCurrentUser } from "@/features/auth/server/current-session";
 
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 export const instant = false;
 
 export default async function HistoryPage() {
+  await connection();
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/");
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { SavedCombinationsDashboard } from "@/features/saved-combination/components/saved-combinations-dashboard";
 import { getCurrentUser } from "@/features/auth/server/current-session";
 import { getSavedCombinationPage } from "@/entities/saved-combination/server/store";
@@ -17,6 +18,7 @@ export default async function SavedCombinationsPage({
 }: {
   searchParams: Promise<{ combinationId?: string }>;
 }) {
+  await connection();
   const user = await getCurrentUser();
   if (!user) redirect("/");
   const { combinationId } = await searchParams;
