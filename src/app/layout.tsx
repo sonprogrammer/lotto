@@ -5,7 +5,7 @@ import { QueryProvider } from "@/shared/providers/query-provider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    `https://${process.env.VERCEL_URL ?? "lotto-amber.vercel.app"}`,
+    `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "lotto-amber.vercel.app"}`,
   ),
   title: "로또 6/45 | 행운의 번호 미리보기",
   description: "공이 순서대로 멈추며 공개되는 로또 6/45 랜덤 번호 미리보기",
