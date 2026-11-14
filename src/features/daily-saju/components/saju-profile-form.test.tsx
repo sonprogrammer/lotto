@@ -40,6 +40,8 @@ it("shows lunar leap-month only for lunar calendar and saves the entered profile
   fireEvent.change(screen.getByLabelText("태어난 날짜"), {
     target: { value: "1980-04-12" },
   });
+  expect(screen.getByLabelText("태어난 날짜")).toHaveValue("1980-04-12");
+  expect(screen.getByLabelText("태어난 시간 (선택)")).toHaveFocus();
   fireEvent.change(screen.getByLabelText("태어난 시간 (선택)"), {
     target: { value: "08:30" },
   });
@@ -54,6 +56,20 @@ it("shows lunar leap-month only for lunar calendar and saves the entered profile
       birthTime: "08:30",
     }),
   );
+});
+
+it("rejects an impossible date before saving and keeps the entered value", async () => {
+  const onSave = vi.fn();
+  render(<SajuProfileForm profile={null} onSave={onSave} onDelete={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText("태어난 날짜"), {
+    target: { value: "2023-02-29" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "저장하기" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "생년월일을 연도, 월, 일 순서로 숫자 8자리 입력해 주세요.",
+  );
+  expect(onSave).not.toHaveBeenCalled();
+  expect(screen.getByLabelText("태어난 날짜")).toHaveValue("2023-02-29");
 });
 
 it("requires confirmation before deleting an existing profile", async () => {

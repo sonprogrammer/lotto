@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import type { SajuProfile, SajuProfileInput } from "@/entities/user";
 import { ConfirmationDialog } from "@/shared/ui/confirmation-dialog";
 
@@ -16,6 +16,41 @@ type Props = {
 const fieldClassName =
   "mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-900/10";
 
+function formatBirthDate(value: string) {
+  if (value.length <= 4) return value;
+  if (value.length <= 6) return `${value.slice(0, 4)}-${value.slice(4)}`;
+  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6)}`;
+}
+
+function formatBirthTime(value: string) {
+  return value.length <= 2 ? value : `${value.slice(0, 2)}:${value.slice(2)}`;
+}
+
+function parseBirthDate(value: string): string | null {
+  if (value.length !== 8) return null;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(4, 6));
+  const day = Number(value.slice(6, 8));
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
+}
+
+function parseBirthTime(value: string): string | null {
+  if (!value) return "";
+  if (value.length !== 4) return null;
+  const hour = Number(value.slice(0, 2));
+  const minute = Number(value.slice(2, 4));
+  if (hour > 23 || minute > 59) return null;
+  return `${value.slice(0, 2)}:${value.slice(2, 4)}`;
+}
+
 export function SajuProfileForm({
   profile,
   onSave,
@@ -27,22 +62,37 @@ export function SajuProfileForm({
   const [isEditing, setIsEditing] = useState(!profile);
   const [isDeleteOpen, setDeleteOpen] = useState(false);
   const [localError, setLocalError] = useState("");
+  const timeInputRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
-  const [birthDate, setBirthDate] = useState(profile?.birthDate ?? "");
+  const [birthDateDigits, setBirthDateDigits] = useState(
+    profile?.birthDate.replace(/\D/g, "") ?? "",
+  );
   const [calendarType, setCalendarType] = useState<"solar" | "lunar">(
     profile?.calendarType ?? "solar",
   );
   const [isLeapMonth, setLeapMonth] = useState(profile?.isLeapMonth ?? false);
-  const [birthTime, setBirthTime] = useState(profile?.birthTime ?? "");
+  const [birthTimeDigits, setBirthTimeDigits] = useState(
+    profile?.birthTime?.replace(/\D/g, "") ?? "",
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const parsedBirthDate = parseBirthDate(birthDateDigits);
+    if (!parsedBirthDate) {
+      setLocalError("생년월일을 연도, 월, 일 순서로 숫자 8자리 입력해 주세요.");
+      return;
+    }
+    const parsedBirthTime = parseBirthTime(birthTimeDigits);
+    if (parsedBirthTime === null) {
+      setLocalError("태어난 시간은 시와 분을 숫자 4자리로 입력해 주세요.");
+      return;
+    }
     const input: SajuProfileInput = {
       ...(displayName.trim() && { displayName: displayName.trim() }),
-      birthDate,
+      birthDate: parsedBirthDate,
       calendarType,
       ...(calendarType === "lunar" && { isLeapMonth }),
-      ...(birthTime && { birthTime }),
+      ...(parsedBirthTime && { birthTime: parsedBirthTime }),
     };
     setLocalError("");
     try {
@@ -110,10 +160,10 @@ export function SajuProfileForm({
             try {
               await onDelete();
               setDisplayName("");
-              setBirthDate("");
+              setBirthDateDigits("");
               setCalendarType("solar");
               setLeapMonth(false);
-              setBirthTime("");
+              setBirthTimeDigits("");
               setIsEditing(true);
               setDeleteOpen(false);
             } catch {
@@ -161,16 +211,6 @@ export function SajuProfileForm({
           />
         </label>
         <label className="text-sm font-medium text-slate-700">
-          태어난 날짜
-          <input
-            className={fieldClassName}
-            type="date"
-            value={birthDate}
-            onChange={(event) => setBirthDate(event.target.value)}
-            required
-          />
-        </label>
-        <label className="text-sm font-medium text-slate-700">
           달력 기준
           <select
             className={fieldClassName}
@@ -186,13 +226,54 @@ export function SajuProfileForm({
           </select>
         </label>
         <label className="text-sm font-medium text-slate-700">
+          태어난 날짜
+          <input
+            className={fieldClassName}
+            type="text"
+            inputMode="numeric"
+            autoComplete="bday"
+            aria-label="태어난 날짜"
+            aria-describedby="birth-date-hint"
+            placeholder="YYYY-MM-DD"
+            value={formatBirthDate(birthDateDigits)}
+            onChange={(event) => {
+              const digits = event.target.value.replace(/\D/g, "").slice(0, 8);
+              setBirthDateDigits(digits);
+              if (parseBirthDate(digits)) timeInputRef.current?.focus();
+            }}
+            maxLength={10}
+          />
+          <span
+            id="birth-date-hint"
+            className="mt-1 block text-xs font-normal text-slate-400"
+          >
+            숫자 8자리를 입력하면 시간 칸으로 이동해요.
+          </span>
+        </label>
+        <label className="text-sm font-medium text-slate-700">
           태어난 시간 (선택)
           <input
             className={fieldClassName}
-            type="time"
-            value={birthTime}
-            onChange={(event) => setBirthTime(event.target.value)}
+            ref={timeInputRef}
+            type="text"
+            inputMode="numeric"
+            aria-label="태어난 시간 (선택)"
+            placeholder="HH:mm"
+            aria-describedby="birth-time-hint"
+            value={formatBirthTime(birthTimeDigits)}
+            onChange={(event) =>
+              setBirthTimeDigits(
+                event.target.value.replace(/\D/g, "").slice(0, 4),
+              )
+            }
+            maxLength={5}
           />
+          <span
+            id="birth-time-hint"
+            className="mt-1 block text-xs font-normal text-slate-400"
+          >
+            예: 오전 8시 30분은 0830으로 입력해요.
+          </span>
         </label>
         {calendarType === "lunar" && (
           <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 sm:col-span-2">
