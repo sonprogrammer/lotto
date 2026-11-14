@@ -59,12 +59,14 @@ a {
 .preview-orb-top {
   top: 14%;
   left: -190px;
+  animation: preview-orb-drift 10s ease-in-out infinite alternate;
 }
 
 .preview-orb-bottom {
   right: -190px;
   bottom: 7%;
   width: 390px;
+  animation: preview-orb-drift 13s ease-in-out infinite alternate-reverse;
 }
 
 .preview-header,
@@ -983,13 +985,181 @@ a {
 
 .preview-content {
   display: flex;
-  width: min(100%, 760px);
+  width: min(100%, 1200px);
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 60px 0 72px;
-  text-align: center;
+  text-align: left;
+}
+
+.preview-hero-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+  align-items: center;
+  gap: clamp(34px, 6vw, 76px);
+}
+
+.preview-promo {
+  min-width: 0;
+  animation: preview-content-arrive 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.preview-promo .preview-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+  color: #62738b;
+  font-size: 13px;
+  letter-spacing: 0.025em;
+}
+
+.preview-live-dot {
+  width: 8px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #7db69a;
+  box-shadow: 0 0 0 4px rgb(125 182 154 / 13%);
+}
+
+.preview-promo h1 {
+  margin: 0;
+  color: #1a273a;
+  font-size: clamp(42px, 5vw, 64px);
+  font-weight: 740;
+  letter-spacing: -0.075em;
+  line-height: 1.18;
+}
+
+.preview-promo .preview-description {
+  margin: 19px 0 27px;
+  color: #718097;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.preview-saju-card {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 23px;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 100% 0, rgb(226 236 250 / 65%), transparent 44%),
+    rgb(255 255 255 / 68%);
+  box-shadow: 0 14px 34px rgb(39 56 82 / 5%);
+  backdrop-filter: blur(16px);
+}
+
+.preview-saju-icon {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  color: #b59451;
+  font-size: 15px;
+}
+
+.preview-saju-ball {
+  display: grid;
+  width: 58px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 76%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 26%, #fff3bc, #efcd5a 52%, #dcae35);
+  box-shadow:
+    inset 0 3px 6px rgb(255 255 255 / 72%),
+    0 7px 14px rgb(93 73 28 / 13%);
+  color: #69531e;
+  font-size: 22px;
+  font-weight: 750;
+}
+
+.preview-saju-label {
+  margin: 0 0 5px;
+  color: #98a4b5;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+}
+
+.preview-saju-card h2 {
+  margin: 0;
+  color: #293a52;
+  font-size: 15px;
+  font-weight: 720;
+  letter-spacing: -0.035em;
+}
+
+.preview-saju-card div > p:last-child {
+  margin: 5px 20px 0 0;
+  color: #7e8ba0;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.preview-saju-cta {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 15px;
+  background: #fee500;
+  color: #272421;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 720;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.preview-saju-cta:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 18px rgb(112 98 19 / 15%);
+}
+
+.preview-saju-cta:focus-visible {
+  outline: 3px solid #86b8ed;
+  outline-offset: 4px;
+}
+
+.preview-saju-cta:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.preview-saju-cta-arrow {
+  margin-left: auto;
+  padding: 0 15px 0 0;
+  font-size: 19px;
+  font-weight: 400;
+}
+
+.preview-saju-error {
+  margin: 9px 0 0;
+  color: #a93636;
+  font-size: 12px;
+}
+
+.preview-saju-note {
+  margin: 13px 0 0;
+  color: #9aa5b4;
+  font-size: 10px;
+  line-height: 1.6;
 }
 
 .preview-eyebrow {
@@ -1017,6 +1187,7 @@ a {
 }
 
 .draw-card {
+  min-width: 0;
   width: 100%;
   border: 1px solid rgb(255 255 255 / 95%);
   border-radius: 30px;
@@ -1028,6 +1199,8 @@ a {
     inset 0 1px 0 rgb(255 255 255 / 95%);
   backdrop-filter: blur(18px);
   text-align: left;
+  animation: preview-content-arrive 800ms 90ms cubic-bezier(0.2, 0.7, 0.2, 1)
+    both;
 }
 
 .draw-card-heading {
@@ -1148,6 +1321,14 @@ a {
   color: #697990;
   font-size: 13px;
   font-weight: 550;
+  text-align: center;
+}
+
+.draw-quota {
+  margin: 5px 0 0;
+  color: #8795a8;
+  font-size: 11px;
+  font-weight: 650;
   text-align: center;
 }
 
@@ -1313,6 +1494,28 @@ a {
   }
 }
 
+@keyframes preview-content-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes preview-orb-drift {
+  from {
+    transform: translate3d(0, -8px, 0);
+  }
+
+  to {
+    transform: translate3d(14px, 10px, 0);
+  }
+}
+
 @media (max-width: 760px) {
   .analysis-grid {
     grid-template-columns: 1fr;
@@ -1355,7 +1558,11 @@ a {
     padding: 58px 0 54px;
   }
 
-  .preview-description {
+  .preview-promo h1 {
+    font-size: clamp(36px, 10vw, 46px);
+  }
+
+  .preview-promo .preview-description {
     margin-bottom: 27px;
     font-size: 14px;
   }
@@ -1377,6 +1584,80 @@ a {
 
   .preview-footer {
     font-size: 10px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .preview-hero-grid {
+    max-width: 700px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(16px, 2.5vw, 24px);
+    margin: 0 auto;
+  }
+
+  .draw-card {
+    order: -1;
+  }
+
+  .preview-promo {
+    text-align: center;
+  }
+
+  .preview-promo .preview-eyebrow {
+    justify-content: center;
+  }
+
+  .preview-saju-card {
+    text-align: left;
+  }
+
+  .preview-saju-note {
+    text-align: left;
+  }
+}
+
+@media (max-width: 560px) {
+  .preview-content {
+    padding: 32px 0 28px;
+  }
+
+  .preview-promo .preview-eyebrow {
+    margin-bottom: 12px;
+  }
+
+  .preview-promo .preview-description {
+    margin: 12px 0 16px;
+  }
+
+  .preview-saju-card {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .preview-saju-ball {
+    width: 48px;
+  }
+
+  .preview-saju-card div > p:last-child {
+    margin-right: 0;
+  }
+
+  .preview-saju-cta {
+    min-height: 48px;
+    margin-top: 10px;
+  }
+
+  .preview-saju-note {
+    margin-top: 8px;
+  }
+
+  .draw-card {
+    padding: 19px 16px 17px;
+  }
+
+  .ball-tray {
+    margin-top: 21px;
   }
 }
 
