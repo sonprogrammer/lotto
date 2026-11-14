@@ -62,6 +62,21 @@ it("runs analysis only after the user clicks and displays real results", async (
   });
 });
 
+it("separates analysis controls and frequency from supporting patterns", () => {
+  const { container } = renderDashboard();
+  const workspace = container.querySelector(".analysis-workspace");
+
+  expect(
+    workspace?.querySelector(".analysis-primary-column"),
+  ).toBeInTheDocument();
+  expect(
+    workspace?.querySelector(".analysis-support-column"),
+  ).toBeInTheDocument();
+  expect(
+    workspace?.querySelector(".analysis-primary-column .analysis-run-button"),
+  ).toBeInTheDocument();
+});
+
 it("lets the user select a custom period and reports the returned range", async () => {
   fetchMock.mockResolvedValue(
     new Response(

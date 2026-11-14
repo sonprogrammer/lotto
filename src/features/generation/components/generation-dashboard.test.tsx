@@ -101,6 +101,16 @@ it("uses the selected saved prompt content for generation", async () => {
   expect(request.prompt).toBe("홀짝을 3개씩 맞춰주세요.");
 });
 
+it("places controls and generated combinations in separate workspace columns", () => {
+  const { container } = renderDashboard();
+  const form = screen
+    .getByRole("button", { name: "조합 생성하기" })
+    .closest("form");
+
+  expect(form?.parentElement).toHaveClass("generation-workspace");
+  expect(container.querySelector(".generation-output")).toBeInTheDocument();
+});
+
 it("keeps prompt management out of the generation form", () => {
   renderDashboard();
 
