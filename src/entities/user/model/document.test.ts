@@ -26,6 +26,21 @@ describe("KakaoUserDocumentSchema", () => {
     );
   });
 
+  it("accepts a user document with a separate saju profile", () => {
+    expect(
+      KakaoUserDocumentSchema.safeParse({
+        ...validDocument,
+        sajuProfile: {
+          displayName: "아빠",
+          birthDate: "1980-05-12",
+          calendarType: "solar",
+          createdAt: new Date("2026-11-14T00:00:00.000Z"),
+          updatedAt: new Date("2026-11-14T00:00:00.000Z"),
+        },
+      }).success,
+    ).toBe(true);
+  });
+
   it.each([
     { kakaoId: "" },
     { nickname: "   " },
