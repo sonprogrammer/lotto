@@ -23,19 +23,16 @@ export function useManualLotterySync() {
   const mutation = useMutation({
     mutationFn: requestManualLotterySync,
     onSuccess: async ({ changed }) => {
-      const queries = [
-        queryClient.invalidateQueries({ queryKey: ["lottery-sync-status"] }),
-      ];
-      if (changed) {
-        queries.push(
-          queryClient.invalidateQueries({
-            queryKey: ["lottery-draw-history"],
-          }),
-          queryClient.invalidateQueries({ queryKey: ["weekly-analysis"] }),
-        );
-      }
-      await Promise.all(queries);
+      if (!changed) return;
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["lottery-draw-history"],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["weekly-analysis"] }),
+      ]);
     },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["lottery-sync-status"] }),
   });
 
   return {

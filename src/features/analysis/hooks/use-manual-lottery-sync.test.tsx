@@ -64,11 +64,16 @@ it("exposes a retry message when the sync request fails", async () => {
       { status: 502 },
     ),
   );
-  const { result } = createHook();
+  const { result, invalidateQueries } = createHook();
 
   act(() => result.current.sync());
 
   await waitFor(() =>
     expect(result.current.errorMessage).toContain("다시 시도"),
+  );
+  await waitFor(() =>
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["lottery-sync-status"],
+    }),
   );
 });
