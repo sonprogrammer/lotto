@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ConfirmationDialog } from "@/shared/ui/confirmation-dialog";
 import type { SavedCombination } from "@/entities/saved-combination/model/combination";
 import { useManageSavedCombinations } from "../hooks/use-manage-saved-combinations";
@@ -55,6 +56,7 @@ export function SavedCombinationsPanel({
     setError("");
     try {
       await action();
+      toast.success("조합을 수정했어요.");
       return true;
     } catch (cause) {
       setError(
@@ -66,20 +68,22 @@ export function SavedCombinationsPanel({
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
+    const target = deleteTarget;
     setDeleteError("");
     try {
-      if (deleteTarget.type === "one") {
-        await manage.remove.mutateAsync(deleteTarget.id);
-        setSelectedIds((current) =>
-          current.filter((id) => id !== deleteTarget.id),
-        );
-      } else if (deleteTarget.type === "selected") {
-        await manage.removeMany.mutateAsync({ ids: deleteTarget.ids });
+      if (target.type === "one") {
+        await manage.remove.mutateAsync(target.id);
+        setSelectedIds((current) => current.filter((id) => id !== target.id));
+        toast.success("조합을 삭제했어요.");
+      } else if (target.type === "selected") {
+        await manage.removeMany.mutateAsync({ ids: target.ids });
         setSelectedIds([]);
+        toast.success(`${target.ids.length}개 조합을 삭제했어요.`);
       } else {
         await manage.removeMany.mutateAsync({ all: true });
         setSelectedIds([]);
         setPage(1);
+        toast.success("저장한 조합을 모두 삭제했어요.");
       }
       setDeleteTarget(null);
     } catch (cause) {

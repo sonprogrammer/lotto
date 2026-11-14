@@ -21,6 +21,7 @@ vi.mock("../lib/generate-lotto-numbers", () => ({
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: () => "/",
 }));
 
 function setReducedMotion(matches: boolean) {

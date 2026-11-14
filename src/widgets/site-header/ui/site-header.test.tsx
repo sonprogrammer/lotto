@@ -3,7 +3,11 @@ import { expect, it, vi } from "vitest";
 import { SiteHeader } from "./site-header";
 import { QueryProvider } from "@/shared/providers/query-provider";
 
-const { managerMock } = vi.hoisted(() => ({ managerMock: vi.fn() }));
+const { managerMock, pathnameMock } = vi.hoisted(() => ({
+  managerMock: vi.fn(),
+  pathnameMock: vi.fn(() => "/"),
+}));
+vi.mock("next/navigation", () => ({ usePathname: pathnameMock }));
 vi.mock(
   "@/features/saved-prompt/components/saved-prompt-manager-dialog",
   () => ({
@@ -51,4 +55,23 @@ it("does not show prompt settings to signed-out visitors", () => {
   expect(
     screen.queryByRole("button", { name: "프롬프트 설정" }),
   ).not.toBeInTheDocument();
+});
+
+it("marks the current navigation link as active", () => {
+  pathnameMock.mockReturnValue("/analysis");
+
+  render(
+    <QueryProvider>
+      <SiteHeader isConfigured isSignedIn />
+    </QueryProvider>,
+  );
+
+  expect(screen.getByRole("link", { name: "이번 주 분석" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  expect(screen.getByRole("link", { name: "당첨 내역" })).not.toHaveAttribute(
+    "aria-current",
+    "page",
+  );
 });

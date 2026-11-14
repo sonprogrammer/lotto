@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Toaster, toast } from "sonner";
 import { SavedPromptCreateSchema } from "@/entities/saved-prompt/model/input";
 import type { SavedPrompt } from "@/entities/saved-prompt/model/prompt";
 import {
@@ -11,6 +12,7 @@ import {
 } from "../hooks";
 import "./saved-prompt-manager-dialog.css";
 
+const PROMPT_TOASTER_ID = "saved-prompt-settings";
 const focusRingClasses =
   "focus-visible:outline-2 focus-visible:outline-[#86b8ed] focus-visible:outline-offset-0";
 
@@ -88,14 +90,19 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
     }
     setTitleError("");
     setContentError("");
-    const onSaved = () => resetForm();
+    const onSaved = (message: string) => {
+      toast.success(message, { toasterId: PROMPT_TOASTER_ID });
+      resetForm();
+    };
     if (editingPrompt) {
       updatePrompt.mutate(
         { id: editingPrompt.id, input: parsed.data },
-        { onSuccess: onSaved },
+        { onSuccess: () => onSaved("프롬프트를 수정했어요.") },
       );
     } else {
-      createPrompt.mutate(parsed.data, { onSuccess: onSaved });
+      createPrompt.mutate(parsed.data, {
+        onSuccess: () => onSaved("프롬프트를 저장했어요."),
+      });
     }
   }
 
@@ -114,6 +121,13 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
         close();
       }}
     >
+      <Toaster
+        id={PROMPT_TOASTER_ID}
+        position="top-center"
+        duration={3500}
+        closeButton
+        richColors
+      />
       <div className="saved-prompt-dialog-header">
         <div>
           <p className="saved-prompt-dialog-eyebrow">MY PROMPTS</p>
@@ -208,7 +222,12 @@ export function SavedPromptManagerDialog({ open, userId, onClose }: Props) {
                     disabled={deletePrompt.isPending}
                     onClick={() =>
                       deletePrompt.mutate(prompt.id, {
-                        onSuccess: () => setDeletingPromptId(null),
+                        onSuccess: () => {
+                          setDeletingPromptId(null);
+                          toast.success("프롬프트를 삭제했어요.", {
+                            toasterId: PROMPT_TOASTER_ID,
+                          });
+                        },
                       })
                     }
                   >
