@@ -22,7 +22,7 @@ export function SiteHeader({
   isSignedIn,
 }: SiteHeaderProps) {
   const [isPromptSettingsOpen, setPromptSettingsOpen] = useState(false);
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   function isCurrentPage(href: string) {
     return pathname === href || pathname.startsWith(`${href}/`);
