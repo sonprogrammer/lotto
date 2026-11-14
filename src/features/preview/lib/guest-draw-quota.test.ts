@@ -11,6 +11,7 @@ describe("getGuestDrawCount", () => {
     ["-1", 0],
     ["1.5", 0],
     ["4", 3],
+    ["9007199254740992", 3],
   ])("normalizes stored count %s to %i", (value, expected) => {
     expect(getGuestDrawCount(value)).toBe(expected);
   });

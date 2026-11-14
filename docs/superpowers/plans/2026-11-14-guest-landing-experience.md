@@ -27,7 +27,7 @@
 
 ## Review Focus
 
-- 저장 횟수가 3회보다 크거나 숫자가 아닌 값이면 3회로 보정하고, 없는 값은 0회로 시작한다. (Task 1)
+- 저장 값이 없거나 숫자가 아닌 형식이면 0회로 시작하고, 숫자 문자열이 3 이상이면 안전 정수 범위와 관계없이 3회로 보정한다. (Task 1)
 - 브라우저 저장소를 읽기 전에는 생성 버튼을 사용할 수 없다. (Task 1)
 - 생성 클릭 시 애니메이션 종료를 기다리지 않고 사용 횟수를 기록한다. (Task 1)
 - 세 번째 생성 뒤 네 번째 클릭은 번호 생성 없이 로그인 안내만 표시한다. (Task 2)
@@ -47,7 +47,7 @@
 **Interfaces:**
 
 - `MAX_GUEST_DRAWS: number`는 `3`입니다.
-- `getGuestDrawCount(value: string | null): number`는 저장 값이 없거나 유효하지 않으면 `0`, 유효한 값은 정수로 읽고 3으로 제한합니다.
+- `getGuestDrawCount(value: string | null): number`는 저장 값이 없거나 숫자 형식이 아니면 `0`, 숫자 문자열은 정수로 읽고 3으로 제한합니다.
 - `useGuestDrawLimit()`은 `{ drawCount: number, isReady: boolean, tryRecordDraw: () => boolean }`을 반환합니다. `tryRecordDraw()`는 저장된 횟수를 다시 확인하고, 3회 미만일 때만 횟수를 기록한 뒤 `true`를 반환합니다.
 - `localStorage` 접근 예외는 잡아 화면 오류를 막습니다. 저장소가 차단된 경우 현재 화면 세션 안에서만 횟수를 관리합니다.
 
@@ -57,7 +57,7 @@
   - Run: `npm test -- --run src/features/preview/lib/guest-draw-quota.test.ts`
   - Expected: `getGuestDrawCount` 미구현 실패.
 - [x] **Step 3: 파서와 상수 구현**
-  - `MAX_GUEST_DRAWS = 3`; 잘못된 값은 0, 유효 정수는 0~3으로 제한합니다.
+  - `MAX_GUEST_DRAWS = 3`; 숫자 형식이 아닌 값은 0, 숫자 문자열은 0~3으로 제한합니다.
 - [x] **Step 4: 훅 테스트 작성 후 실패 확인**
   - 초기 저장값 복원, 준비 전 비활성 상태, 3회까지만 기록, 저장소 예외 시 세션 내 동작을 검증합니다.
 - [x] **Step 5: `useGuestDrawLimit` 구현**

@@ -4,7 +4,8 @@ export function getGuestDrawCount(value: string | null): number {
   if (value === null || !/^\d+$/.test(value)) return 0;
 
   const count = Number(value);
+  if (count >= MAX_GUEST_DRAWS) return MAX_GUEST_DRAWS;
   if (!Number.isSafeInteger(count)) return 0;
 
-  return Math.min(Math.max(count, 0), MAX_GUEST_DRAWS);
+  return Math.max(count, 0);
 }
