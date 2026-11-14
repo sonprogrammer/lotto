@@ -1,5 +1,10 @@
 .generation-content {
-  max-width: 920px;
+  max-width: 1280px;
+}
+.generation-workspace {
+  display: grid;
+  min-width: 0;
+  gap: 24px;
 }
 .generation-form,
 .generation-results,
@@ -14,6 +19,10 @@
 .generation-form {
   display: grid;
   gap: 28px;
+  min-width: 0;
+}
+.generation-output {
+  min-width: 0;
 }
 .generation-fieldset {
   border: 0;
@@ -245,7 +254,7 @@
 .generation-results,
 .generation-loading,
 .generation-feedback {
-  margin-top: 22px;
+  margin: 0;
 }
 .generation-results-head {
   display: flex;
@@ -368,6 +377,13 @@
   .generation-results-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+@media (min-width: 1024px) {
+  .generation-workspace {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: start;
+    gap: 28px;
   }
 }
 @media (hover: none) {
