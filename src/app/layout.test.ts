@@ -5,9 +5,12 @@ afterEach(() => {
   vi.resetModules();
 });
 
-it("resolves Open Graph image URLs through the stable production domain", async () => {
+it("uses the fixed public domain regardless of deployment host environment variables", async () => {
   vi.stubEnv("VERCEL_URL", "deployment-protected.vercel.app");
-  vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "lotto-amber.vercel.app");
+  vi.stubEnv(
+    "VERCEL_PROJECT_PRODUCTION_URL",
+    "unexpected-production-host.vercel.app",
+  );
   vi.resetModules();
 
   const { metadata } = await import("./layout");
