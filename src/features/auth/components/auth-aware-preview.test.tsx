@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getKakaoConfigMock, getMongoConfigMock, getCurrentUserMock } =
-  vi.hoisted(() => ({
-    getKakaoConfigMock: vi.fn(),
-    getMongoConfigMock: vi.fn(),
-    getCurrentUserMock: vi.fn(),
-  }));
+const {
+  getKakaoConfigMock,
+  getMongoConfigMock,
+  getCurrentUserMock,
+  dailySajuHomeMock,
+} = vi.hoisted(() => ({
+  getKakaoConfigMock: vi.fn(),
+  getMongoConfigMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
+  dailySajuHomeMock: vi.fn(() => null),
+}));
 
 vi.mock("@/features/auth/server/config", () => ({
   getKakaoConfig: getKakaoConfigMock,
@@ -17,8 +22,10 @@ vi.mock("@/features/auth/server/current-session", () => ({
 vi.mock("@/features/preview/components/lotto-number-preview", () => ({
   LottoNumberPreview: () => null,
 }));
+vi.mock("@/features/daily-saju", () => ({ DailySajuHome: dailySajuHomeMock }));
 
 import { AuthAwarePreview } from "./auth-aware-preview";
+import { DailySajuHome } from "@/features/daily-saju";
 
 describe("AuthAwarePreview", () => {
   beforeEach(() => {
@@ -49,7 +56,7 @@ describe("AuthAwarePreview", () => {
     });
   });
 
-  it("passes the signed-in user's nickname to the preview header", async () => {
+  it("shows the daily saju home for a signed-in user and passes the server KST date", async () => {
     getCurrentUserMock.mockResolvedValue({
       userId: "user-1",
       nickname: "손영진",
@@ -57,10 +64,12 @@ describe("AuthAwarePreview", () => {
 
     const element = await AuthAwarePreview();
 
+    expect(element.type).toBe(DailySajuHome);
     expect(element.props).toMatchObject({
-      isSignedIn: true,
+      isConfigured: true,
       displayName: "손영진",
       userId: "user-1",
+      dateKey: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
   });
 });

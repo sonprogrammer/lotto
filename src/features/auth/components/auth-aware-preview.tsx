@@ -1,6 +1,8 @@
 import { LottoNumberPreview } from "@/features/preview/components/lotto-number-preview";
 import { getKakaoConfig, getMongoConfig } from "@/features/auth/server/config";
 import { getCurrentUser } from "@/features/auth/server/current-session";
+import { getKstDateKey } from "@/features/daily-saju/lib/get-kst-date-key";
+import { DailySajuHome } from "@/features/daily-saju";
 
 export async function AuthAwarePreview() {
   let isConfigured = false;
@@ -18,6 +20,17 @@ export async function AuthAwarePreview() {
     userId = currentUser?.userId;
   } catch {
     isConfigured = false;
+  }
+
+  if (isSignedIn && userId) {
+    return (
+      <DailySajuHome
+        displayName={displayName}
+        userId={userId}
+        dateKey={getKstDateKey(new Date())}
+        isConfigured={isConfigured}
+      />
+    );
   }
 
   return (
