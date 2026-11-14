@@ -115,6 +115,17 @@ a {
   background: #fff;
 }
 
+.analysis-link[aria-current="page"] {
+  background: #263b59;
+  color: #fff;
+  box-shadow: 0 4px 12px rgb(38 59 89 / 18%);
+}
+
+.brand[aria-current="page"] .brand-mark {
+  background: #dfad21;
+  color: #263b59;
+}
+
 .analysis-link:focus-visible,
 .analysis-retry-link:focus-visible {
   outline: 3px solid #86b8ed;

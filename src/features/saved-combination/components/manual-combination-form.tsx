@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useSaveCombination } from "../hooks/use-save-combination";
 import { SavedNumberPicker } from "./saved-number-picker";
 
@@ -25,6 +26,7 @@ export function ManualCombinationForm({ userId }: Props) {
         numbers: numbers as [number, number, number, number, number, number],
       });
       setNumbers([]);
+      toast.success("조합을 저장했어요.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "저장하지 못했어요.");
     }
