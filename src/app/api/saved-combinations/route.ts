@@ -5,6 +5,7 @@ import {
 import {
   createSavedCombination,
   deleteSavedCombinations,
+  getSavedCombinationPage,
   listSavedCombinations,
 } from "@/entities/saved-combination/server/store";
 import { SAVED_COMBINATIONS_PAGE_SIZE } from "@/entities/saved-combination/model/page";
@@ -18,14 +19,24 @@ export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) return privateJson({ error: "로그인이 필요해요." }, 401);
   const pageValue = new URL(request.url).searchParams.get("page") ?? "1";
+  const targetCombinationId = new URL(request.url).searchParams.get(
+    "targetCombinationId",
+  );
   const page = Number(pageValue);
   if (!Number.isSafeInteger(page) || page < 1)
     return privateJson({ error: "페이지 값을 확인해 주세요." }, 400);
   try {
+    const targetPage = targetCombinationId
+      ? await getSavedCombinationPage(
+          user.userId,
+          targetCombinationId,
+          SAVED_COMBINATIONS_PAGE_SIZE,
+        ).catch(() => null)
+      : null;
     return privateJson(
       await listSavedCombinations(
         user.userId,
-        page,
+        targetPage ?? page,
         SAVED_COMBINATIONS_PAGE_SIZE,
       ),
     );

@@ -3,21 +3,12 @@
 import { useState } from "react";
 
 import { getLottoNumberTone } from "@/shared/lib/get-lotto-number-tone";
-import { SiteHeader } from "@/widgets/site-header";
 import { useRunWeeklyAnalysis } from "../hooks/use-run-weekly-analysis";
 import type { AnalysisPeriod } from "../model/analysis-period";
 import { AnalysisPeriodSelector } from "./analysis-period-selector";
 import { FrequencyGapHelp } from "./frequency-gap-help";
 
-type AnalysisDashboardProps = {
-  displayName?: string;
-  userId: string;
-};
-
-export function AnalysisDashboard({
-  displayName,
-  userId,
-}: AnalysisDashboardProps) {
+export function AnalysisDashboard() {
   const [period, setPeriod] = useState<AnalysisPeriod>({
     type: "recent",
     count: 30,
@@ -59,12 +50,6 @@ export function AnalysisDashboard({
 
   return (
     <main className="analysis-shell">
-      <SiteHeader
-        displayName={displayName}
-        userId={userId}
-        isConfigured
-        isSignedIn
-      />
       <section className="analysis-content" aria-labelledby="analysis-title">
         <p className="analysis-eyebrow">LOTTO 6/45 · 데이터 기반 분석</p>
         <h1 id="analysis-title">이번 주 분석</h1>

@@ -1,19 +1,25 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-const { getCurrentUserMock, listMock, createMock, deleteManyMock } = vi.hoisted(
-  () => ({
-    getCurrentUserMock: vi.fn(),
-    listMock: vi.fn(),
-    createMock: vi.fn(),
-    deleteManyMock: vi.fn(),
-  }),
-);
+const {
+  getCurrentUserMock,
+  listMock,
+  getTargetPageMock,
+  createMock,
+  deleteManyMock,
+} = vi.hoisted(() => ({
+  getCurrentUserMock: vi.fn(),
+  listMock: vi.fn(),
+  getTargetPageMock: vi.fn(),
+  createMock: vi.fn(),
+  deleteManyMock: vi.fn(),
+}));
 
 vi.mock("@/features/auth/server/current-session", () => ({
   getCurrentUser: getCurrentUserMock,
 }));
 vi.mock("@/entities/saved-combination/server/store", () => ({
   listSavedCombinations: listMock,
+  getSavedCombinationPage: getTargetPageMock,
   createSavedCombination: createMock,
   deleteSavedCombinations: deleteManyMock,
 }));
@@ -51,6 +57,7 @@ beforeEach(() => {
     total: 1,
     totalPages: 1,
   });
+  getTargetPageMock.mockResolvedValue(null);
   createMock.mockResolvedValue(combination);
   deleteManyMock.mockResolvedValue(1);
 });
@@ -91,6 +98,25 @@ it("passes the requested page and fixed page size to the user-scoped store", asy
   );
   expect(response.status).toBe(200);
   expect(listMock).toHaveBeenCalledWith(user.userId, 2, 10);
+});
+
+it("resolves a deep-linked saved combination page for the current user", async () => {
+  getTargetPageMock.mockResolvedValue(3);
+  const response = await GET(
+    request(
+      "GET",
+      undefined,
+      "http://localhost/api/saved-combinations?page=1&targetCombinationId=combination-1",
+    ),
+  );
+
+  expect(response.status).toBe(200);
+  expect(getTargetPageMock).toHaveBeenCalledWith(
+    user.userId,
+    "combination-1",
+    10,
+  );
+  expect(listMock).toHaveBeenCalledWith(user.userId, 3, 10);
 });
 
 it("creates a valid manually selected combination for the current user", async () => {

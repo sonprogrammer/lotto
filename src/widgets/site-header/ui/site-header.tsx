@@ -13,6 +13,7 @@ type SiteHeaderProps = {
   userId?: string;
   isConfigured: boolean;
   isSignedIn: boolean;
+  isSharedLayout?: boolean;
 };
 
 export function SiteHeader({
@@ -20,6 +21,7 @@ export function SiteHeader({
   userId,
   isConfigured,
   isSignedIn,
+  isSharedLayout = false,
 }: SiteHeaderProps) {
   const [isPromptSettingsOpen, setPromptSettingsOpen] = useState(false);
   const pathname = usePathname() ?? "";
@@ -30,7 +32,9 @@ export function SiteHeader({
 
   return (
     <>
-      <header className="preview-header">
+      <header
+        className={`preview-header${isSharedLayout ? " shared-site-header" : ""}`}
+      >
         <Link
           className="brand"
           href="/"

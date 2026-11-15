@@ -40,6 +40,7 @@ describe("app sessions", () => {
       { tokenHash: 1 },
       { unique: true },
     );
+    expect(db.createIndex).toHaveBeenCalledTimes(2);
   });
 
   it("looks up the hash and requires an expiry strictly after the request time", async () => {

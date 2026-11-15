@@ -17,8 +17,15 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export const fetchSavedCombinations = (page: number) =>
-  request<SavedCombinationsPage>(`/api/saved-combinations?page=${page}`);
+export const fetchSavedCombinations = (
+  page: number,
+  targetCombinationId?: string,
+) => {
+  const params = new URLSearchParams({ page: String(page) });
+  if (targetCombinationId)
+    params.set("targetCombinationId", targetCombinationId);
+  return request<SavedCombinationsPage>(`/api/saved-combinations?${params}`);
+};
 export const createSavedCombinationRequest = (input: SavedCombinationCreate) =>
   request<SavedCombination>("/api/saved-combinations", {
     method: "POST",

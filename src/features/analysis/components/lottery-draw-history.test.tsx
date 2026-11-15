@@ -7,9 +7,6 @@ import { LotteryDrawHistory } from "./lottery-draw-history";
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
 
-vi.mock("@/widgets/site-header", () => ({
-  SiteHeader: () => <header>헤더</header>,
-}));
 vi.mock("../hooks/use-lottery-sync-status", () => ({
   useLotterySyncStatus: () => ({
     data: {
@@ -43,10 +40,7 @@ function renderHistory() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <LotteryDrawHistory
-        displayName="손영진"
-        userId="65ab12cd34ef56ab78cd90ef"
-      />
+      <LotteryDrawHistory />
     </QueryClientProvider>,
   );
 }

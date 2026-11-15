@@ -1,22 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { SiteHeader } from "@/widgets/site-header";
 import { DrawHistoryCard } from "./draw-history-card";
 import { useLotteryDrawHistory } from "../hooks/use-lottery-draw-history";
 import { useLotterySyncStatus } from "../hooks/use-lottery-sync-status";
 import { useManualLotterySync } from "../hooks/use-manual-lottery-sync";
 import { LotterySyncStatus } from "./lottery-sync-status";
 
-type LotteryDrawHistoryProps = {
-  displayName?: string;
-  userId: string;
-};
-
-export function LotteryDrawHistory({
-  displayName,
-  userId,
-}: LotteryDrawHistoryProps) {
+export function LotteryDrawHistory() {
   const query = useLotteryDrawHistory();
   const syncStatus = useLotterySyncStatus();
   const manualSync = useManualLotterySync();
@@ -25,12 +16,6 @@ export function LotteryDrawHistory({
 
   return (
     <main className="history-shell">
-      <SiteHeader
-        displayName={displayName}
-        userId={userId}
-        isConfigured
-        isSignedIn
-      />
       <section className="history-content" aria-labelledby="history-title">
         <p className="analysis-eyebrow">LOTTO 6/45 · DRAW HISTORY</p>
         <h1 id="history-title">회차별 당첨 내역</h1>

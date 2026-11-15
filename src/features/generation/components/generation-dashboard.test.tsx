@@ -3,10 +3,10 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { GenerationDashboard } from "./generation-dashboard";
+import { AuthSessionProvider } from "@/features/auth/providers/auth-session-provider";
 
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
-vi.mock("@/widgets/site-header", () => ({ SiteHeader: () => <header /> }));
 const { useSavedPromptsMock } = vi.hoisted(() => ({
   useSavedPromptsMock: vi.fn(),
 }));
@@ -21,10 +21,11 @@ function renderDashboard() {
         new QueryClient({ defaultOptions: { mutations: { retry: false } } })
       }
     >
-      <GenerationDashboard
-        displayName="손영진"
-        userId="65ab12cd34ef56ab78cd90ef"
-      />
+      <AuthSessionProvider
+        user={{ userId: "65ab12cd34ef56ab78cd90ef", nickname: "손영진" }}
+      >
+        <GenerationDashboard />
+      </AuthSessionProvider>
     </QueryClientProvider>,
   );
 }

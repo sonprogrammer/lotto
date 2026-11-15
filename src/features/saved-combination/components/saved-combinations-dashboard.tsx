@@ -1,30 +1,18 @@
 "use client";
 
-import { SiteHeader } from "@/widgets/site-header";
+import { useAuthSession } from "@/features/auth/hooks/use-auth-session";
 import { ManualCombinationForm } from "./manual-combination-form";
 import { SavedCombinationsPanel } from "./saved-combinations-panel";
 
 type Props = {
-  userId: string;
-  displayName?: string;
-  initialPage?: number;
   targetCombinationId?: string;
 };
 
-export function SavedCombinationsDashboard({
-  userId,
-  displayName,
-  initialPage,
-  targetCombinationId,
-}: Props) {
+export function SavedCombinationsDashboard({ targetCombinationId }: Props) {
+  const { userId } = useAuthSession();
+
   return (
     <main className="flex min-h-dvh flex-col items-center bg-slate-50 pt-7 text-slate-950 lg:h-dvh lg:min-h-[40rem] lg:overflow-hidden">
-      <SiteHeader
-        displayName={displayName}
-        userId={userId}
-        isConfigured
-        isSignedIn
-      />
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-5 pb-5 pt-[58px] sm:px-8 lg:min-h-0 lg:pb-6 lg:pt-[58px]">
         <header className="shrink-0">
           <p className="text-xs font-semibold tracking-[0.2em] text-blue-700">
@@ -41,7 +29,6 @@ export function SavedCombinationsDashboard({
           <ManualCombinationForm userId={userId} />
           <SavedCombinationsPanel
             userId={userId}
-            initialPage={initialPage}
             targetCombinationId={targetCombinationId}
           />
         </div>
