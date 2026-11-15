@@ -1,6 +1,6 @@
 "use client";
 
-import { SiteHeader } from "@/widgets/site-header";
+import { useAuthSession } from "@/features/auth/hooks/use-auth-session";
 import { useSavedPrompts } from "@/features/saved-prompt/hooks/use-saved-prompts";
 import { LottoNumberBall } from "@/shared/ui/lotto-number-ball";
 import { useGenerationForm } from "../hooks/use-generation-form";
@@ -9,9 +9,8 @@ import { GenerationPromptControl } from "./generation-prompt-control";
 import { SelectedNumberList } from "./selected-number-list";
 import "./generation.css";
 
-type Props = { displayName?: string; userId: string };
-
-export function GenerationDashboard({ displayName, userId }: Props) {
+export function GenerationDashboard() {
+  const { userId } = useAuthSession();
   const savedPromptsQuery = useSavedPrompts(userId);
   const savedPrompts = savedPromptsQuery.data ?? [];
   const {
@@ -39,12 +38,6 @@ export function GenerationDashboard({ displayName, userId }: Props) {
 
   return (
     <main className="analysis-shell">
-      <SiteHeader
-        displayName={displayName}
-        userId={userId}
-        isConfigured
-        isSignedIn
-      />
       <div className="analysis-content generation-content">
         <p className="analysis-eyebrow">LOTTO 6/45 · NUMBER STUDIO</p>
         <h1>나만의 번호 조합</h1>

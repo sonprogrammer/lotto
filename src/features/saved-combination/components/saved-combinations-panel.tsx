@@ -27,11 +27,12 @@ export function SavedCombinationsPanel({
   targetCombinationId,
 }: Props) {
   const [page, setPage] = useState(initialPage);
+  const [activeTargetId, setActiveTargetId] = useState(targetCombinationId);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
-  const query = useSavedCombinations(userId, page);
+  const query = useSavedCombinations(userId, page, activeTargetId);
   const manage = useManageSavedCombinations(userId);
   const data = query.data;
   const items = data?.items ?? EMPTY_ITEMS;
@@ -42,15 +43,12 @@ export function SavedCombinationsPanel({
   const busy = manage.update.isPending || isDeleting;
 
   useEffect(() => {
-    if (
-      !targetCombinationId ||
-      !items.some((item) => item.id === targetCombinationId)
-    )
+    if (!activeTargetId || !items.some((item) => item.id === activeTargetId))
       return;
     document
-      .getElementById(`saved-combination-${targetCombinationId}`)
+      .getElementById(`saved-combination-${activeTargetId}`)
       ?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [items, targetCombinationId]);
+  }, [items, activeTargetId]);
 
   const run = async (action: () => Promise<unknown>) => {
     setError("");
@@ -223,7 +221,10 @@ export function SavedCombinationsPanel({
               page={data?.page ?? page}
               totalPages={totalPages}
               disabled={busy}
-              onChange={setPage}
+              onChange={(nextPage) => {
+                setActiveTargetId(undefined);
+                setPage(nextPage);
+              }}
             />
             {query.isFetching && (
               <p

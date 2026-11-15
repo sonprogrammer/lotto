@@ -7,13 +7,13 @@ import { AuthControl } from "@/features/auth/components/auth-control";
 import { SavedPromptManagerDialog } from "@/features/saved-prompt/components/saved-prompt-manager-dialog";
 import { NotificationBell } from "@/features/notification/components/notification-bell";
 import { PushPermissionPrompt } from "@/features/notification/components/push-permission-prompt";
-import { IntentPrefetchLink } from "./intent-prefetch-link";
 
 type SiteHeaderProps = {
   displayName?: string;
   userId?: string;
   isConfigured: boolean;
   isSignedIn: boolean;
+  isSharedLayout?: boolean;
 };
 
 export function SiteHeader({
@@ -21,6 +21,7 @@ export function SiteHeader({
   userId,
   isConfigured,
   isSignedIn,
+  isSharedLayout = false,
 }: SiteHeaderProps) {
   const [isPromptSettingsOpen, setPromptSettingsOpen] = useState(false);
   const pathname = usePathname() ?? "";
@@ -31,7 +32,9 @@ export function SiteHeader({
 
   return (
     <>
-      <header className="preview-header">
+      <header
+        className={`preview-header${isSharedLayout ? " shared-site-header" : ""}`}
+      >
         <Link
           className="brand"
           href="/"
@@ -45,34 +48,34 @@ export function SiteHeader({
         </Link>
         {isSignedIn && (
           <nav className="site-navigation" aria-label="주요 메뉴">
-            <IntentPrefetchLink
+            <Link
               className="analysis-link"
               href="/generate"
-              ariaCurrent={isCurrentPage("/generate") ? "page" : undefined}
+              aria-current={isCurrentPage("/generate") ? "page" : undefined}
             >
               번호 생성
-            </IntentPrefetchLink>
-            <IntentPrefetchLink
+            </Link>
+            <Link
               className="analysis-link"
               href="/analysis"
-              ariaCurrent={isCurrentPage("/analysis") ? "page" : undefined}
+              aria-current={isCurrentPage("/analysis") ? "page" : undefined}
             >
               이번 주 분석
-            </IntentPrefetchLink>
-            <IntentPrefetchLink
+            </Link>
+            <Link
               className="analysis-link"
               href="/history"
-              ariaCurrent={isCurrentPage("/history") ? "page" : undefined}
+              aria-current={isCurrentPage("/history") ? "page" : undefined}
             >
               당첨 내역
-            </IntentPrefetchLink>
-            <IntentPrefetchLink
+            </Link>
+            <Link
               className="analysis-link"
               href="/saved"
-              ariaCurrent={isCurrentPage("/saved") ? "page" : undefined}
+              aria-current={isCurrentPage("/saved") ? "page" : undefined}
             >
               저장한 번호
-            </IntentPrefetchLink>
+            </Link>
             {userId && (
               <NotificationBell
                 userId={userId}

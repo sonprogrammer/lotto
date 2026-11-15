@@ -8,12 +8,6 @@ import { AnalysisDashboard } from "./analysis-dashboard";
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
 
-vi.mock("@/widgets/site-header", () => ({
-  SiteHeader: ({ displayName }: { displayName: string }) => (
-    <div>{displayName}</div>
-  ),
-}));
-
 const analysis = calculateWeeklyAnalysis([
   { roundNumber: 1249, numbers: [2, 11, 16, 25, 34, 35] },
 ]);
@@ -32,10 +26,7 @@ function renderDashboard() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <AnalysisDashboard
-        displayName="손영진"
-        userId="65ab12cd34ef56ab78cd90ef"
-      />
+      <AnalysisDashboard />
     </QueryClientProvider>,
   );
 }

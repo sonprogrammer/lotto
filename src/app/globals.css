@@ -81,6 +81,11 @@ a {
   min-height: 42px;
 }
 
+.shared-site-header {
+  margin: 24px auto 0;
+  padding: 0 32px;
+}
+
 .site-navigation {
   display: flex;
   align-items: center;
@@ -924,6 +929,11 @@ a {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
+  }
+
+  .shared-site-header {
+    margin-top: 20px;
+    padding: 0 18px;
   }
 
   .history-shell {
